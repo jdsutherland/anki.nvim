@@ -248,7 +248,7 @@ M.add_note_to_quick_deck = function(arguments)
 		:find()
 end
 
-M.select_state_deck = function(opts)
+M.select_state_quickdeck = function(opts)
 	opts = opts or {}
 	local response_deck_names = ankiconnect.deck_names()
 	if response_deck_names.error ~= json.null then

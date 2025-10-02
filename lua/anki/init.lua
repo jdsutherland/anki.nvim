@@ -16,19 +16,19 @@ if vim.g.anki_default_mappings then
 		nowait = true,
 		remap = false,
 
-		{ vim.g.anki_prefix .. "a", group = "[ANKI] Deck Add Note" },
-		{ vim.g.anki_prefix .. "ab", "<cmd>AnkiDeckAddNote<CR>", desc = "Deck Add Note" },
-		{ vim.g.anki_prefix .. "as", "<cmd>AnkiDeckAddNoteSplit<CR>", desc = "Deck Add Note Split" },
-		{ vim.g.anki_prefix .. "av", "<cmd>AnkiDeckAddNoteVsplit<CR>", desc = "Deck Add Note Vsplit" },
-		{ vim.g.anki_prefix .. "at", "<cmd>AnkiDeckAddNoteTabpage<CR>", desc = "Deck Add Note Tabpage" },
-		{ vim.g.anki_prefix .. "ac", "<cmd>AnkiDeckAddNoteCustom<CR>", desc = "Deck Add Note Custom" },
+		{ vim.g.anki_prefix .. "a", group = "[ANKI] QuickDeck Add Note" },
+		{ vim.g.anki_prefix .. "ab", "<cmd>AnkiQuickDeckAddNote<CR>", desc = "QuickDeck Add Note" },
+		{ vim.g.anki_prefix .. "as", "<cmd>AnkiQuickDeckAddNoteSplit<CR>", desc = "QuickDeck Add Note Split" },
+		{ vim.g.anki_prefix .. "av", "<cmd>AnkiQuickDeckAddNoteVsplit<CR>", desc = "QuickDeck Add Note Vsplit" },
+		{ vim.g.anki_prefix .. "at", "<cmd>AnkiQuickDeckAddNoteTabpage<CR>", desc = "QuickDeck Add Note Tabpage" },
+		{ vim.g.anki_prefix .. "ac", "<cmd>AnkiQuickDeckAddNoteCustom<CR>", desc = "QuickDeck Add Note Custom" },
 
-		{ vim.g.anki_prefix .. "e", group = "[ANKI] Deck Edit Note" },
-		{ vim.g.anki_prefix .. "eb", "<cmd>AnkiDeckEditNote<CR>", desc = "Deck Edit Note" },
-		{ vim.g.anki_prefix .. "es", "<cmd>AnkiDeckEditNoteSplit<CR>", desc = "Deck Edit Note Split" },
-		{ vim.g.anki_prefix .. "ev", "<cmd>AnkiDeckEditNoteVsplit<CR>", desc = "Deck Edit Note Vsplit" },
-		{ vim.g.anki_prefix .. "et", "<cmd>AnkiDeckEditNoteTabpage<CR>", desc = "Deck Edit Note Tabpage" },
-		{ vim.g.anki_prefix .. "ec", "<cmd>AnkiDeckEditNoteCustom<CR>", desc = "Deck Edit Note Custom" },
+		{ vim.g.anki_prefix .. "e", group = "[ANKI] QuickDeck Edit Note" },
+		{ vim.g.anki_prefix .. "eb", "<cmd>AnkiQuickDeckEditNote<CR>", desc = "QuickDeck Edit Note" },
+		{ vim.g.anki_prefix .. "es", "<cmd>AnkiQuickDeckEditNoteSplit<CR>", desc = "QuickDeck Edit Note Split" },
+		{ vim.g.anki_prefix .. "ev", "<cmd>AnkiQuickDeckEditNoteVsplit<CR>", desc = "QuickDeck Edit Note Vsplit" },
+		{ vim.g.anki_prefix .. "et", "<cmd>AnkiQuickDeckEditNoteTabpage<CR>", desc = "QuickDeck Edit Note Tabpage" },
+		{ vim.g.anki_prefix .. "ec", "<cmd>AnkiQuickDeckEditNoteCustom<CR>", desc = "QuickDeck Edit Note Custom" },
 
 		{ vim.g.anki_prefix .. "A", group = "[ANKI] Add Note" },
 		{ vim.g.anki_prefix .. "Ab", "<cmd>AnkiAddNote<CR>", desc = "Add Note" },
@@ -44,11 +44,11 @@ if vim.g.anki_default_mappings then
 		{ vim.g.anki_prefix .. "Et", "<cmd>AnkiEditNoteTabpage<CR>", desc = "Edit Note Tabpage" },
 		{ vim.g.anki_prefix .. "Ec", "<cmd>AnkiEditNoteCustom<CR>", desc = "Edit Note Custom" },
 
-		{ vim.g.anki_prefix .. "c", "<cmd>AnkiDeckCreate<CR>", desc = "Deck Create" },
-		{ vim.g.anki_prefix .. "d", "<cmd>AnkiDeckDeleteNote<CR>", desc = "Deck Delete Note" },
+		{ vim.g.anki_prefix .. "c", "<cmd>AnkiQuickDeckCreate<CR>", desc = "QuickDeck Create" },
+		{ vim.g.anki_prefix .. "d", "<cmd>AnkiQuickDeckDeleteNote<CR>", desc = "QuickDeck Delete Note" },
 		{ vim.g.anki_prefix .. "D", "<cmd>AnkiDeleteNote<CR>", desc = "Delete Note" },
 
-		{ vim.g.anki_prefix .. "f", "<cmd>AnkiSelectDeck<CR>", desc = "Select Deck" },
+		{ vim.g.anki_prefix .. "f", "<cmd>AnkiSelectQuickDeck<CR>", desc = "Select QuickDeck" },
 		{ vim.g.anki_prefix .. "i", "<cmd>AnkiInfos<CR>", desc = "Infos" },
 
 		{ vim.g.anki_prefix .. "k", "<cmd>AnkiCurrentKillNote<CR>", desc = "Kill Current Note" },
@@ -57,9 +57,9 @@ if vim.g.anki_default_mappings then
 		{ vim.g.anki_prefix .. "r", "<cmd>AnkiCurrentDeleteNote<CR>", desc = "Delete Current Note" },
 
 		{ vim.g.anki_prefix .. "b", group = "[ANKI] GUI Browse" },
-		{ vim.g.anki_prefix .. "bf", "<cmd>AnkiGUIBrowseDeck<CR>", desc = "Browse To QuickDeck In Gui" },
-		{ vim.g.anki_prefix .. "bd", "<cmd>AnkiCurrentGUIBrowseDeck<CR>", desc = "Browse To Current Note Deck In Gui" },
-		{ vim.g.anki_prefix .. "bn", "<cmd>AnkiCurrentGUIBrowseNote<CR>", desc = "Browse To Current Note In Gui" },
+		{ vim.g.anki_prefix .. "bf", "<cmd>AnkiGUIBrowseToQuickDeck<CR>", desc = "GUI Browse To QuickDeck" },
+		{ vim.g.anki_prefix .. "bd", "<cmd>AnkiGUIBrowseCurrentDeck<CR>", desc = "GUI Browse To Current Note Deck" },
+		{ vim.g.anki_prefix .. "bn", "<cmd>AnkiGUIBrowseCurrentNote<CR>", desc = "GUI Browse To Current Note" },
 
 		{ vim.g.anki_prefix, group = "[ANKI]" },
 	})
@@ -67,77 +67,77 @@ end
 
 -- Setup commands
 
-vim.api.nvim_create_user_command("AnkiDeckAddNote", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckAddNote", function()
 	require("anki.api").add_note_to_quick_deck()
 end, {
 	desc = "[Anki] Create A Note On The QuickDeck In The Current Buffer",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckAddNoteSplit", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteSplit", function()
 	require("anki.api").add_note_to_quick_deck({ display = "split" })
 end, {
 	desc = "[Anki] Create A Note On The QuickDeck In A New Split",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckAddNoteVsplit", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteVsplit", function()
 	require("anki.api").add_note_to_quick_deck({ display = "vsplit" })
 end, {
 	desc = "[Anki] Create A Note On The QuickDeck In A New Vsplit",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckAddNoteTabpage", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteTabpage", function()
 	require("anki.api").add_note_to_quick_deck({ display = "tabpage" })
 end, {
 	desc = "[Anki] Create A Note On The QuickDeck In A New Tabpage",
 	nargs = 0,
 })
 
-vim.api.nvim_create_user_command("AnkiDeckAddNoteCustom", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteCustom", function()
 	require("anki.api").add_note_to_quick_deck({ display = "custom" })
 end, {
 	desc = "[Anki] Create A Note On The QuickDeck Using The Custom Method",
 	nargs = 0,
 })
 
-vim.api.nvim_create_user_command("AnkiDeckEditNote", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckEditNote", function()
 	require("anki.api").edit_note_from_quick_deck()
 end, {
 	desc = "[Anki] Edit A Note On The QuickDeck In The Current Window",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckEditNoteSplit", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteSplit", function()
 	require("anki.api").edit_note_from_quick_deck({ display = "split" })
 end, {
 	desc = "[Anki] Edit A Note On The QuickDeck In A New Split",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckEditNoteVsplit", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteVsplit", function()
 	require("anki.api").edit_note_from_quick_deck({ display = "vsplit" })
 end, {
 	desc = "[Anki] Edit A Note On The QuickDeck In A New Vsplit",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckEditNoteTabpage", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteTabpage", function()
 	require("anki.api").edit_note_from_quick_deck({ display = "tabpage" })
 end, {
 	desc = "[Anki] Edit A Note On The QuickDeck In A New Tabpage",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiDeckEditNoteCustom", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteCustom", function()
 	require("anki.api").edit_note_from_quick_deck({ display = "custom" })
 end, {
 	desc = "[Anki] Edit A Note On The QuickDeck Using The Custom Method",
 	nargs = 0,
 })
 
-vim.api.nvim_create_user_command("AnkiDeckCreate", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckCreate", function()
 	require("anki.api").add_deck()
 end, {
 	desc = "[Anki] Create a deck",
 	nargs = 0,
 })
 
-vim.api.nvim_create_user_command("AnkiDeckDeleteNote", function()
+vim.api.nvim_create_user_command("AnkiQuickDeckDeleteNote", function()
 	require("anki.api").pick_note_to_delete_from_quick_deck()
 end, {
 	desc = "[Anki] Delete A Note On The QuickDeck",
@@ -210,8 +210,8 @@ end, {
 	desc = "[Anki] Delete A Note",
 	nargs = 0,
 })
-vim.api.nvim_create_user_command("AnkiSelectDeck", function()
-	require("anki.api").select_state_deck()
+vim.api.nvim_create_user_command("AnkiSelectQuickDeck", function()
+	require("anki.api").select_state_quickdeck()
 end, {
 	desc = "[Anki] Select The Deck",
 	nargs = 0,
@@ -246,19 +246,19 @@ end, {
 	desc = "[Anki] Delete The Current Buffer Note From Anki",
 })
 
-vim.api.nvim_create_user_command("AnkiGUIBrowseDeck", function()
+vim.api.nvim_create_user_command("AnkiGUIBrowseToQuickDeck", function()
 	require("anki.api").gui_deck()
 end, {
 	desc = "[Anki] GUI Browse QuickDeck",
 })
 
-vim.api.nvim_create_user_command("AnkiCurrentGUIBrowseDeck", function()
+vim.api.nvim_create_user_command("AnkiGUIBrowseCurrentDeck", function()
 	require("anki.api").gui_deck_current(vim.api.nvim_get_current_buf())
 end, {
 	desc = "[Anki] GUI Browse Current Note Deck",
 })
 
-vim.api.nvim_create_user_command("AnkiCurrentGUIBrowseNote", function()
+vim.api.nvim_create_user_command("AnkiGUIBrowseCurrentNote", function()
 	require("anki.api").gui_note(vim.api.nvim_get_current_buf())
 end, {
 	desc = "[Anki] GUI Browse Current Note",
