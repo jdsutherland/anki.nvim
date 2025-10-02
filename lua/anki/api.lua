@@ -43,41 +43,16 @@ M.search_for_note = function(bufnr)
 end
 
 M.delete_note_buffers = function(note)
-	-- -- Close tags buffer
-	-- vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
+	if vim.g.anki_custom_delete then
+		vim.g.anki_custom_delete(note)
+	else
+		-- Close tags buffer
+		vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
 
-	-- -- Close fields buffers
-	-- for _, field in pairs(note.fields) do
-	-- 	vim.api.nvim_buf_delete(field.bufnr, { force = true })
-	-- end
-
-	-- Unlist the buffer as a workaround so that vim wintabs doesn't close the tab when there still are buffers in it
-	local cur = vim.api.nvim_get_current_buf()
-
-	-- If we're about to unlist the current buffer, move to another one
-	if
-		cur == note.tags.bufnr
-		or vim.tbl_contains(
-			vim.tbl_map(function(f)
-				return f.bufnr
-			end, note.fields),
-			cur
-		)
-	then
-		-- Try to go to the next listed buffer
-		vim.cmd("WintabsNext")
-		-- If still in the same buffer (maybe no next), try previous
-		if vim.api.nvim_get_current_buf() == cur then
-			vim.cmd("WintabsPrevious")
+		-- Close fields buffers
+		for _, field in pairs(note.fields) do
+			vim.api.nvim_buf_delete(field.bufnr, { force = true })
 		end
-	end
-
-	-- Close tags buffer
-	vim.api.nvim_set_option_value("buflisted", false, { buf = note.tags.bufnr })
-
-	-- Close fields buffers
-	for _, field in pairs(note.fields) do
-		vim.api.nvim_set_option_value("buflisted", false, { buf = field.bufnr })
 	end
 end
 
@@ -816,7 +791,7 @@ M.pick_delete_note_selected_deck = function(opts)
 	if not anki_state.selected_deck then
 		return
 	end
-  local query =  'deck:' .. anki_state.selected_deck
+	local query = "deck:" .. anki_state.selected_deck
 	local response_deck_notes = ankiconnect.deck_notes(query)
 	if response_deck_notes.error ~= json.null then
 		vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)

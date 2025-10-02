@@ -6,6 +6,7 @@ vim.g.anki_default_mappings = vim.g.anki_default_mappings or true
 vim.g.anki_default_deck = vim.g.anki_default_deck or "TestDeck"
 vim.g.anki_gui_browse_enabled = vim.g.anki_gui_browse_enabled or true
 vim.g.anki_custom_display = vim.g.anki_custom_display or nil
+vim.g.anki_custom_delete = vim.g.anki_custom_delete or nil
 vim.g.anki_after_edit_buffer_hook = vim.g.anki_after_edit_buffer_hook or nil
 
 -- Setup mappings
