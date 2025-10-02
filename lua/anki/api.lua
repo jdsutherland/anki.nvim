@@ -179,12 +179,12 @@ M.add_note = function(arguments)
 		:find()
 end
 
-M.add_note_selected_deck = function(arguments)
+M.add_note_to_quick_deck = function(arguments)
 	arguments = arguments or {}
 	local opts = arguments.opts or {}
 	local display = arguments.display or nil
 
-	if not anki_state.selected_deck then
+	if not anki_state.quickdeck then
 		return
 	end
 
@@ -220,7 +220,7 @@ M.add_note_selected_deck = function(arguments)
 						tags = {
 							bufnr = nil,
 						},
-						deck_name = anki_state.selected_deck,
+						deck_name = anki_state.quickdeck,
 						model_name = model_selection[1],
 					})
 
@@ -248,7 +248,7 @@ M.add_note_selected_deck = function(arguments)
 		:find()
 end
 
-M.select_deck = function(opts)
+M.select_state_deck = function(opts)
 	opts = opts or {}
 	local response_deck_names = ankiconnect.deck_names()
 	if response_deck_names.error ~= json.null then
@@ -268,7 +268,7 @@ M.select_deck = function(opts)
 				actions.select_default:replace(function()
 					actions.close(prompt_bufnr)
 					local deck_selection = action_state.get_selected_entry()
-					anki_state.selected_deck = deck_selection[1]
+					anki_state.quickdeck = deck_selection[1]
 				end)
 				return true
 			end,
@@ -305,15 +305,15 @@ M.note_entry_maker = function(entry)
 	}
 end
 
-M.edit_note_selected_deck = function(arguments)
+M.edit_note_from_quick_deck = function(arguments)
 	arguments = arguments or {}
 	local opts = arguments.opts or {}
 	local display = arguments.display or nil
 
-	if not anki_state.selected_deck then
+	if not anki_state.quickdeck then
 		return
 	end
-	local query = "deck:" .. anki_state.selected_deck
+	local query = "deck:" .. anki_state.quickdeck
 	local response_find_notes = ankiconnect.find_notes(query)
 	if response_find_notes.error ~= json.null then
 		vim.notify(vim.inspect(response_find_notes.error), vim.log.levels.ERROR)
@@ -350,7 +350,7 @@ M.edit_note_selected_deck = function(arguments)
 						},
 						id = note_selection.value.noteId,
 						model_name = note_selection.value.modelName,
-						deck_name = anki_state.selected_deck,
+						deck_name = anki_state.quickdeck,
 					})
 
 					local sorted_fields = {}
@@ -787,11 +787,11 @@ M.pick_delete_note = function(opts)
 		:find()
 end
 
-M.pick_delete_note_selected_deck = function(opts)
-	if not anki_state.selected_deck then
+M.pick_note_to_delete_from_quick_deck = function(opts)
+	if not anki_state.quickdeck then
 		return
 	end
-	local query = "deck:" .. anki_state.selected_deck
+	local query = "deck:" .. anki_state.quickdeck
 	local response_deck_notes = ankiconnect.deck_notes(query)
 	if response_deck_notes.error ~= json.null then
 		vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
@@ -822,7 +822,7 @@ M.pick_delete_note_selected_deck = function(opts)
 					end
 
 					if vim.g.anki_gui_browse_enabled then
-						local query = "deck:" .. anki_state.selected_deck .. ""
+						local query = "deck:" .. anki_state.quickdeck .. ""
 						local response_gui_browse = ankiconnect.gui_browse(query)
 						if response_gui_browse.error ~= json.null then
 							vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
@@ -856,12 +856,12 @@ M.infos = function()
 		"anki_url\t\t\t\t\t\t\t\t\t" .. vim.g.anki_url,
 		"anki_timeout\t\t\t\t\t\t\t" .. vim.g.anki_timeout,
 		"anki_prefix\t\t\t\t\t\t\t\t" .. vim.g.anki_prefix,
-		"anki_default_deck\t\t\t\t\t" .. vim.g.anki_default_deck,
+		"anki_default_deck\t\t\t\t\t" .. vim.g.anki_quickdeck,
 		"anki_default_mappings\t\t\t" .. tostring(vim.g.anki_default_mappings),
 		"anki_gui_browse_enabled \t" .. tostring(vim.g.anki_gui_browse_enabled),
 		"",
 		"--- State",
-		"selected_deck \t\t\t\t\t\t" .. anki_state.selected_deck,
+		"selected_deck \t\t\t\t\t\t" .. anki_state.quickdeck,
 		"",
 		"--- Current Note",
 		(function()
@@ -891,7 +891,7 @@ M.infos = function()
 end
 
 M.gui_deck = function()
-	local deck = anki_state.selected_deck
+	local deck = anki_state.quickdeck
 	local query = "deck:" .. deck
 	local response_gui_browse = ankiconnect.gui_browse(query)
 	if response_gui_browse.error ~= json.null then
