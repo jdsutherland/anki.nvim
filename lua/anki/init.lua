@@ -120,7 +120,7 @@ local function setup_commands()
   }
 
   local single_commands = {
-    { "AnkiDeckCreate", function() api.add_deck() end, "Create a deck" },
+    { "AnkiAddDeck", function() api.add_deck() end, "Create a deck" },
     { "AnkiQuickDeckDeleteNote", function() api.pick_notes_to_delete_from_quick_deck() end, "Delete a note on the QuickDeck" },
     { "AnkiDeleteNote", function() api.pick_delete_notes() end, "Delete a note" },
     { "AnkiSelectQuickDeck", function() api.select_state_quickdeck() end, "Select the QuickDeck"},

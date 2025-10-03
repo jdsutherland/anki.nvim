@@ -64,7 +64,8 @@ You can customize the plugin by passing a table to the =setup()= function. Here 
 
 * Usage
 ** Keymaps
-The plugin provides a set of default keymaps, which you can enable or disable with the =default_mappings= option. The default prefix is =<leader>a=.
+The plugin provides a set of default keymaps, which you can enable or disable with the =default_mappings= option.
+The default prefix is =<leader>a=.
 
 Many actions are organized into *groups* identified by a letter (e.g., =a= for **A**dd, =e= for **E**dit).
 These groups are then followed by a second letter that specifies *how* to display the note buffers :
@@ -139,7 +140,7 @@ Commands without a suffix open the buffers in the current window.
 | =AnkiEditNoteVsplit=           | Edit a note, prompting for a deck (opens buffers in a new vertical split).        |
 | =AnkiEditNoteTabpage=          | Edit a note, prompting for a deck (opens buffers in a new tab page).              |
 | =AnkiEditNoteCustom=           | Edit a note, prompting for a deck (opens buffers with `custom_display` function). |
-| =AnkiDeckCreate=               | Create a new deck.                                                                |
+| =AnkiAddDeck=                  | Add a new deck.                                                                   |
 | =AnkiQuickDeckDeleteNote=      | Delete a note from the QuickDeck (prompts for selection).                         |
 | =AnkiDeleteNote=               | Delete a note from any deck (prompts for selection).                              |
 | =AnkiSelectQuickDeck=          | Select a new deck to use as the QuickDeck.                                        |
