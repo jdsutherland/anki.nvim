@@ -331,7 +331,7 @@ M.edit_note_from_quick_deck = function(arguments)
 
 	local notes_info = response_notes_info.result
 	if next(notes_info) == nil then
-		vim.notify("Deck is empty", vim.log.levels.ERROR)
+		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
 		return
 	end
 
@@ -571,7 +571,7 @@ M.edit_note = function(opts)
 
 					local notes_info = response_deck_notes.result
 					if next(notes_info) == nil then
-						vim.notify("Deck is empty", vim.log.levels.ERROR)
+						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
 						return
 					end
 
@@ -759,7 +759,7 @@ M.pick_delete_notes = function(opts)
 
 					local notes_info = response_deck_notes.result
 					if next(notes_info) == nil then
-						vim.notify("Deck is empty", vim.log.levels.ERROR)
+						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
 						return
 					end
 
@@ -844,7 +844,7 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 
 	local notes_info = response_deck_notes.result
 	if next(notes_info) == nil then
-		vim.notify("Deck is empty", vim.log.levels.ERROR)
+		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
 		return
 	end
 
