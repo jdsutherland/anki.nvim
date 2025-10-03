@@ -22,28 +22,52 @@ if vim.g.anki_default_mappings then
 			{ vim.g.anki_prefix .. "as",function() require("anki.api").add_note_to_quick_deck({ display = "split" }) end, desc = "QuickDeck Add Note Split" },
 			{ vim.g.anki_prefix .. "av",function() require("anki.api").add_note_to_quick_deck({ display = "vsplit" }) end, desc = "QuickDeck Add Note Vsplit" },
 			{ vim.g.anki_prefix .. "at",function() require("anki.api").add_note_to_quick_deck({ display = "tabpage" }) end, desc = "QuickDeck Add Note Tabpage" },
-			{ vim.g.anki_prefix .. "ac",function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end, desc = "QuickDeck Add Note Custom" },
+      (function()
+        if vim.g.anki_custom_display then
+          return { vim.g.anki_prefix .. "ac",function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end, desc = "QuickDeck Add Note Custom" }
+        else
+          return nil
+        end
+      end)(),
 
 			{ vim.g.anki_prefix .. "e", group = "[ANKI] QuickDeck Edit Note" },
 			{ vim.g.anki_prefix .. "eb",function() require("anki.api").edit_note_from_quick_deck() end, desc = "QuickDeck Edit Note" },
 			{ vim.g.anki_prefix .. "es",function() require("anki.api").edit_note_from_quick_deck({ display = "split" }) end, desc = "QuickDeck Edit Note Split" },
 			{ vim.g.anki_prefix .. "ev",function() require("anki.api").edit_note_from_quick_deck({ display = "vsplit" }) end, desc = "QuickDeck Edit Note Vsplit" },
 			{ vim.g.anki_prefix .. "et",function() require("anki.api").edit_note_from_quick_deck({ display = "tabpage" }) end, desc = "QuickDeck Edit Note Tabpage" },
-			{ vim.g.anki_prefix .. "ec",function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end, desc = "QuickDeck Edit Note Custom" },
+      (function()
+        if vim.g.anki_custom_display then
+          return { vim.g.anki_prefix .. "ec",function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end, desc = "QuickDeck Edit Note Custom" }
+        else
+          return nil
+        end
+      end)(),
 
 			{ vim.g.anki_prefix .. "A", group = "[ANKI] Add Note" },
 			{ vim.g.anki_prefix .. "Ab",function() require("anki.api").add_note() end, desc = "Add Note" },
 			{ vim.g.anki_prefix .. "As",function() require("anki.api").add_note({ display = "split" }) end, desc = "Add Note Split" },
 			{ vim.g.anki_prefix .. "Av",function() require("anki.api").add_note({ display = "vsplit" }) end, desc = "Add Note Vsplit" },
 			{ vim.g.anki_prefix .. "At",function() require("anki.api").add_note({ display = "tabpage" }) end, desc = "Add Note Tabpage" },
-			{ vim.g.anki_prefix .. "Ac",function() require("anki.api").add_note({ display = "custom" }) end, desc = "Add Note Custom" },
+      (function()
+        if vim.g.anki_custom_display then
+			    return { vim.g.anki_prefix .. "Ac",function() require("anki.api").add_note({ display = "custom" }) end, desc = "Add Note Custom" }
+        else
+          return nil
+        end
+      end)(),
 
 			{ vim.g.anki_prefix .. "E", group = "[ANKI] Edit Note" },
 			{ vim.g.anki_prefix .. "Eb",function() require("anki.api").edit_note() end, desc = "Edit Note" },
 			{ vim.g.anki_prefix .. "Es",function() require("anki.api").edit_note({ display = "split" }) end, desc = "Edit Note Split" },
 			{ vim.g.anki_prefix .. "Ev",function() require("anki.api").edit_note({ display = "vsplit" }) end, desc = "Edit Note Vsplit" },
 			{ vim.g.anki_prefix .. "Et",function() require("anki.api").edit_note({ display = "tabpage" }) end, desc = "Edit Note Tabpage" },
-			{ vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, desc = "Edit Note Custom" },
+      (function()
+        if vim.g.anki_custom_display then
+			    return { vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, desc = "Edit Note Custom" }
+        else
+          return nil
+        end
+      end)(),
 
 			{ vim.g.anki_prefix .. "d",function() require("anki.api").pick_notes_to_delete_from_quick_deck() end, desc = "QuickDeck Delete Notes" },
 			{ vim.g.anki_prefix .. "D",function() require("anki.api").pick_delete_notes() end, desc = "Delete Notes" },
@@ -68,25 +92,33 @@ if vim.g.anki_default_mappings then
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "as",function() require("anki.api").add_note_to_quick_deck({ display = "split" }) end, {desc = "QuickDeck Add Note Split" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "av",function() require("anki.api").add_note_to_quick_deck({ display = "vsplit" }) end, {desc = "QuickDeck Add Note Vsplit" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "at",function() require("anki.api").add_note_to_quick_deck({ display = "tabpage" }) end, {desc = "QuickDeck Add Note Tabpage" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "ac",function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end, {desc = "QuickDeck Add Note Custom" })
+      if vim.g.anki_custom_display then
+			  vim.keymap.set({"n"}, vim.g.anki_prefix .. "ac",function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end, {desc = "QuickDeck Add Note Custom" })
+      end
 
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "eb",function() require("anki.api").edit_note_from_quick_deck() end, {desc = "QuickDeck Edit Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "es",function() require("anki.api").edit_note_from_quick_deck({ display = "split" }) end, {desc = "QuickDeck Edit Note Split" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "ev",function() require("anki.api").edit_note_from_quick_deck({ display = "vsplit" }) end, {desc = "QuickDeck Edit Note Vsplit" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "et",function() require("anki.api").edit_note_from_quick_deck({ display = "tabpage" }) end, {desc = "QuickDeck Edit Note Tabpage" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "ec",function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end, {desc = "QuickDeck Edit Note Custom" })
+      if vim.g.anki_custom_display then
+        vim.keymap.set({"n"}, vim.g.anki_prefix .. "ec",function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end, {desc = "QuickDeck Edit Note Custom" })
+      end
 
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ab",function() require("anki.api").add_note() end, {desc = "Add Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "As",function() require("anki.api").add_note({ display = "split" }) end, {desc = "Add Note Split" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Av",function() require("anki.api").add_note({ display = "vsplit" }) end, {desc = "Add Note Vsplit" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "At",function() require("anki.api").add_note({ display = "tabpage" }) end, {desc = "Add Note Tabpage" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ac",function() require("anki.api").add_note({ display = "custom" }) end, {desc = "Add Note Custom" })
+      if vim.g.anki_custom_display then
+        vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ac",function() require("anki.api").add_note({ display = "custom" }) end, {desc = "Add Note Custom" })
+      end
 
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Eb",function() require("anki.api").edit_note() end, {desc = "Edit Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Es",function() require("anki.api").edit_note({ display = "split" }) end, {desc = "Edit Note Split" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ev",function() require("anki.api").edit_note({ display = "vsplit" }) end, {desc = "Edit Note Vsplit" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Et",function() require("anki.api").edit_note({ display = "tabpage" }) end, {desc = "Edit Note Tabpage" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, {desc = "Edit Note Custom" })
+      if vim.g.anki_custom_display then
+        vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, {desc = "Edit Note Custom" })
+      end
 
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, {desc = "Deck Create" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "d",function() require("anki.api").pick_notes_to_delete_from_quick_deck() end, {desc = "QuickDeck Delete Note" })
@@ -130,11 +162,13 @@ if vim.g.anki_create_user_commands then
     nargs = 0,
   })
 
-  vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteCustom", function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end,
-  {
-    desc = "[Anki] Create A Note On The QuickDeck Using The Custom Method",
-    nargs = 0,
-  })
+  if vim.g.anki_custom_display then
+    vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteCustom", function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end,
+    {
+      desc = "[Anki] Create A Note On The QuickDeck Using The Custom Method",
+      nargs = 0,
+    })
+  end
 
   vim.api.nvim_create_user_command("AnkiQuickDeckEditNote", function() require("anki.api").edit_note_from_quick_deck() end,
   {
@@ -156,11 +190,13 @@ if vim.g.anki_create_user_commands then
     desc = "[Anki] Edit A Note On The QuickDeck In A New Tabpage",
     nargs = 0,
   })
-  vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteCustom", function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end,
-  {
-    desc = "[Anki] Edit A Note On The QuickDeck Using The Custom Method",
-    nargs = 0,
-  })
+  if vim.g.anki_custom_display then
+    vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteCustom", function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end,
+    {
+      desc = "[Anki] Edit A Note On The QuickDeck Using The Custom Method",
+      nargs = 0,
+    })
+  end
 
   vim.api.nvim_create_user_command("AnkiDeckCreate", function() require("anki.api").add_deck() end,
   {
@@ -194,11 +230,13 @@ if vim.g.anki_create_user_commands then
     desc = "[Anki] Create A Note In A New Tabapge",
     nargs = 0,
   })
-  vim.api.nvim_create_user_command("AnkiAddNoteCustom", function() require("anki.api").add_note({ display = "custom" }) end,
-  {
-    desc = "[Anki] Create A Note Using The Custom Method",
-    nargs = 0,
-  })
+  if vim.g.anki_custom_display then
+    vim.api.nvim_create_user_command("AnkiAddNoteCustom", function() require("anki.api").add_note({ display = "custom" }) end,
+    {
+      desc = "[Anki] Create A Note Using The Custom Method",
+      nargs = 0,
+    })
+  end
   vim.api.nvim_create_user_command("AnkiEditNote", function() require("anki.api").edit_note() end,
   {
     desc = "[Anki] Edit A Note In The Current Window",
@@ -219,11 +257,13 @@ if vim.g.anki_create_user_commands then
     desc = "[Anki] Edit A Note In A New Tabapge",
     nargs = 0,
   })
-  vim.api.nvim_create_user_command("AnkiEditNoteCustom", function() require("anki.api").edit_note({ display = "custom" }) end,
-  {
-    desc = "[Anki] Edit A Note Using The Custom Method",
-    nargs = 0,
-  })
+  if vim.g.anki_custom_display then
+    vim.api.nvim_create_user_command("AnkiEditNoteCustom", function() require("anki.api").edit_note({ display = "custom" }) end,
+    {
+      desc = "[Anki] Edit A Note Using The Custom Method",
+      nargs = 0,
+    })
+  end
   vim.api.nvim_create_user_command("AnkiDeleteNote", function() require("anki.api").pick_delete_notes() end,
   {
     desc = "[Anki] Delete A Note",
