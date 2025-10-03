@@ -328,7 +328,12 @@ M.edit_note_from_quick_deck = function(arguments)
 		vim.notify(vim.inspect(response_notes_info.error), vim.log.levels.ERROR)
 		return
 	end
+
 	local notes_info = response_notes_info.result
+	if next(notes_info) == nil then
+		vim.notify("Deck is empty", vim.log.levels.ERROR)
+    return
+	end
 
 	pickers
 		.new(opts, {
@@ -342,6 +347,10 @@ M.edit_note_from_quick_deck = function(arguments)
 				actions.select_default:replace(function()
 					actions.close(prompt_bufnr)
 					local note_selection = action_state.get_selected_entry()
+					if not note_selection then
+						vim.notify("Empty selection", vim.log.levels.ERROR)
+						return false
+					end
 
 					local note = classes.Note:new({
 						fields = {},
@@ -561,6 +570,10 @@ M.edit_note = function(opts)
 					end
 
 					local notes_info = response_deck_notes.result
+					if next(notes_info) == nil then
+						vim.notify("Deck is empty", vim.log.levels.ERROR)
+            return
+					end
 
 					pickers
 						.new(opts, {
@@ -575,6 +588,10 @@ M.edit_note = function(opts)
 									actions.close(prompt_bufnr)
 
 									local note_selection = action_state.get_selected_entry()
+									if not note_selection then
+										vim.notify("Empty selection", vim.log.levels.ERROR)
+										return false
+									end
 
 									-- Create the note
 									--TODO: Initilize the buffers in a constructor ?
@@ -742,6 +759,10 @@ M.pick_delete_note = function(opts)
 					end
 
 					local notes_info = response_deck_notes.result
+					if next(notes_info) == nil then
+						vim.notify("Deck is empty", vim.log.levels.ERROR)
+            return
+					end
 
 					pickers
 						.new(opts, {
@@ -756,6 +777,10 @@ M.pick_delete_note = function(opts)
 									actions.close(prompt_bufnr)
 
 									local note_selection = action_state.get_selected_entry()
+									if not note_selection then
+										vim.notify("Empty selection", vim.log.levels.ERROR)
+										return false
+									end
 									local note_id_to_delete = note_selection.value.noteId
 
 									local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
@@ -799,6 +824,10 @@ M.pick_note_to_delete_from_quick_deck = function(opts)
 	end
 
 	local notes_info = response_deck_notes.result
+	if next(notes_info) == nil then
+		vim.notify("Deck is empty", vim.log.levels.ERROR)
+    return
+	end
 
 	pickers
 		.new(opts, {
@@ -813,6 +842,10 @@ M.pick_note_to_delete_from_quick_deck = function(opts)
 					actions.close(prompt_bufnr)
 
 					local note_selection = action_state.get_selected_entry()
+					if not note_selection then
+						vim.notify("Empty selection", vim.log.levels.ERROR)
+						return false
+					end
 					local note_id_to_delete = note_selection.value.noteId
 
 					local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
