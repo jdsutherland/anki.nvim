@@ -1,6 +1,5 @@
 local http_request = require("http.request")
 local http_headers = require("http.headers")
-local json = require("rapidjson")
 
 local M = {}
 
@@ -10,7 +9,7 @@ local anki_connect_invoke = function(options)
 	end
 	local action = options.action
 	local version = options.version or 6
-	local params = options.params or {}
+	local params = options.params or vim.empty_dict()
 
 	if not action then
 		error("Missing required fields: action")
@@ -19,7 +18,7 @@ local anki_connect_invoke = function(options)
 		error("Expected a number as version")
 	end
 	if type(params) ~= "table" then
-		error("Expected a table as params")
+		error("Expected a table or nil as params")
 	end
 
 	local url = vim.g.anki_url
@@ -29,7 +28,8 @@ local anki_connect_invoke = function(options)
 		version = version,
 		params = params,
 	}
-	local post_data = json.encode(data)
+
+	local post_data = vim.json.encode(data, { escape_slash = true })
 
 	local headers = http_headers.new()
 	headers:upsert(":method", "POST")
@@ -54,7 +54,7 @@ local anki_connect_invoke = function(options)
 		error("Failed to get response body")
 	end
 
-	return json.decode(body)
+	return vim.json.decode(body, { luanil = { objects = false, array = false } })
 end
 
 M.deck_names = function()
@@ -67,14 +67,6 @@ end
 
 M.notes_info = function(notes)
 	return anki_connect_invoke({ action = "notesInfo", params = { notes = notes } })
-end
-
-M.deck_notes = function(query)
-	local find_notes_response = M.find_notes(query)
-	if find_notes_response.error ~= json.null then
-		return find_notes_response
-	end
-	return M.notes_info(find_notes_response.result)
 end
 
 M.create_deck = function(deck)

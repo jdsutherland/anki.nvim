@@ -1,4 +1,3 @@
-local json = require("rapidjson")
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local actions = require("telescope.actions")
@@ -23,7 +22,7 @@ end
 
 local function safe_call(fn, ...)
 	local response = fn(...)
-	if response.error ~= json.null then
+	if response.error ~= vim.NIL then
 		vim.notify(vim.inspect(response.error), vim.log.levels.ERROR)
 		return nil
 	end
@@ -162,7 +161,6 @@ M.add_note = function(arguments)
 	if not result_model_names then
 		return
 	end
-
 	pick_one("decks", result_deck_names, opts, function(deck_selection)
 		pick_one("models", result_model_names, opts, function(model_selection)
 			local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
@@ -441,16 +439,22 @@ M.edit_note = function(opts)
 
 	pick_one("decks", result_deck_names, opts, function(deck_selection)
 		local query = string.format('"deck:%s"', deck_selection[1])
-		local result_notes_info = safe_call(ankiconnect.deck_notes, query)
-		if not result_notes_info then
+
+		local result_find_notes = safe_call(ankiconnect.find_notes, query)
+		if not result_find_notes then
 			return
 		end
-		if next(result_notes_info) == nil then
+		local result_deck_notes_info = safe_call(ankiconnect.notes_info, result_find_notes)
+		if not result_deck_notes_info then
+			return
+		end
+
+		if next(result_deck_notes_info) == nil then
 			vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
 			return
 		end
 
-		pick_one("notes", result_notes_info, opts, function(note_selection)
+		pick_one("notes", result_deck_notes_info, opts, function(note_selection)
 			local sorted_fields = {}
 			-- Initialize table
 			for i = 0, M.table_length(note_selection.value.fields) do
@@ -567,11 +571,16 @@ M.pick_delete_notes = function(opts)
 					local deck_selection = action_state.get_selected_entry()
 
 					local query = string.format('"deck:%s"', deck_selection[1])
-					local result_deck_notes = safe_call(ankiconnect.deck_notes, query)
-					if not result_deck_notes then
+					local result_find_notes = safe_call(ankiconnect.find_notes, query)
+					if not result_find_notes then
 						return
 					end
-					if next(result_deck_notes) == nil then
+					local result_deck_notes_info = safe_call(ankiconnect.notes_info, result_find_notes)
+					if not result_deck_notes_info then
+						return
+					end
+
+					if next(result_deck_notes_info) == nil then
 						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
 						return
 					end
@@ -580,7 +589,7 @@ M.pick_delete_notes = function(opts)
 						.new(opts, {
 							prompt_title = "notes",
 							finder = finders.new_table({
-								results = result_deck_notes,
+								results = result_deck_notes_info,
 								entry_maker = M.note_entry_maker,
 							}),
 							sorter = conf.generic_sorter(opts),
@@ -631,12 +640,17 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 		return
 	end
 	local query = string.format('"deck:%s"', anki_state.quickdeck)
-	local result_deck_notes = safe_call(ankiconnect.deck_notes, query)
-	if not result_deck_notes then
+
+	local result_find_notes = safe_call(ankiconnect.find_notes, query)
+	if not result_find_notes then
+		return
+	end
+	local result_deck_notes_info = safe_call(ankiconnect.notes_info, result_find_notes)
+	if not result_deck_notes_info then
 		return
 	end
 
-	if next(result_deck_notes) == nil then
+	if next(result_deck_notes_info) == nil then
 		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
 		return
 	end
@@ -645,7 +659,7 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 		.new(opts, {
 			prompt_title = "notes",
 			finder = finders.new_table({
-				results = result_deck_notes,
+				results = result_deck_notes_info,
 				entry_maker = M.note_entry_maker,
 			}),
 			sorter = conf.generic_sorter(opts),
