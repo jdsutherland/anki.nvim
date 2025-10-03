@@ -64,7 +64,7 @@ local function setup_mappings()
     { "D", function() api.pick_delete_notes() end, "Delete Notes" },
     { "q", function() api.select_state_quickdeck() end, "Select QuickDeck" },
     { "i", function() api.infos() end, "Infos" },
-    { "c", function() api.add_deck() end, "Deck Create" },
+    { "c", function() api.add_deck() end, "Add Deck" },
     { "k", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill Current Note" },
     { "K", function() api.kill_all() end, "Kill All Notes" },
     { "w", function() api.send_note(vim.api.nvim_get_current_buf()) end, "Send Current Note" },
