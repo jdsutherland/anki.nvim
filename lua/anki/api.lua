@@ -56,6 +56,32 @@ local function create_note(deck_name, model_name, field_names, id)
 	return note
 end
 
+local function pick_one(prompt, results, opts, on_select, entry_maker)
+	pickers
+		.new(opts, {
+			prompt_title = prompt,
+			finder = finders.new_table({
+				results = results,
+				entry_maker = entry_maker,
+			}),
+			sorter = conf.generic_sorter(opts),
+			attach_mappings = function(prompt_bufnr, map)
+				actions.select_default:replace(function()
+					actions.close(prompt_bufnr)
+					local entry = action_state.get_selected_entry()
+					if entry then
+						on_select(entry)
+					else
+						vim.notify("Empty selection", vim.log.levels.ERROR)
+						return false
+					end
+				end)
+				return true
+			end,
+		})
+		:find()
+end
+
 M.table_length = function(tbl)
 	local length = 0
 	for key, value in pairs(tbl) do
@@ -137,53 +163,17 @@ M.add_note = function(arguments)
 		return
 	end
 
-	pickers
-		.new(opts, {
-			prompt_title = "decks",
-			finder = finders.new_table({
-				results = result_deck_names,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-
-					local deck_selection = action_state.get_selected_entry()
-
-					pickers
-						.new(opts, {
-							prompt_title = "models",
-							finder = finders.new_table({
-								results = result_model_names,
-							}),
-							sorter = conf.generic_sorter(opts),
-							attach_mappings = function(prompt_bufnr, map)
-								actions.select_default:replace(function()
-									actions.close(prompt_bufnr)
-
-									local model_selection = action_state.get_selected_entry()
-
-									local result_field_names =
-										safe_call(ankiconnect.model_field_names, model_selection[1])
-									if not result_field_names then
-										return
-									end
-
-									local note = create_note(deck_selection[1], model_selection[1], result_field_names)
-
-									table.insert(anki_state.notes, note)
-
-									M.display_note(note, display)
-								end)
-								return true
-							end,
-						})
-						:find()
-				end)
-				return true
-			end,
-		})
-		:find()
+	pick_one("decks", result_deck_names, opts, function(deck_selection)
+		pick_one("models", result_model_names, opts, function(model_selection)
+			local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
+			if not result_field_names then
+				return
+			end
+			local note = create_note(deck_selection[1], model_selection[1], result_field_names)
+			table.insert(anki_state.notes, note)
+			M.display_note(note, display)
+		end)
+	end)
 end
 
 M.add_note_to_quick_deck = function(arguments)
@@ -200,34 +190,15 @@ M.add_note_to_quick_deck = function(arguments)
 		return
 	end
 
-	pickers
-		.new(opts, {
-			prompt_title = "models",
-			finder = finders.new_table({
-				results = result_model_names,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-
-					local model_selection = action_state.get_selected_entry()
-
-					local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
-					if not result_field_names then
-						return
-					end
-
-					local note = create_note(anki_state.quickdeck, model_selection[1], result_field_names)
-
-					table.insert(anki_state.notes, note)
-
-					M.display_note(note, display)
-				end)
-				return true
-			end,
-		})
-		:find()
+	pick_one("models", result_model_names, opts, function(model_selection)
+		local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
+		if not result_field_names then
+			return
+		end
+		local note = create_note(anki_state.quickdeck, model_selection[1], result_field_names)
+		table.insert(anki_state.notes, note)
+		M.display_note(note, display)
+	end)
 end
 
 M.select_state_quickdeck = function(opts)
@@ -236,23 +207,9 @@ M.select_state_quickdeck = function(opts)
 	if not result_deck_names then
 		return
 	end
-	pickers
-		.new(opts, {
-			prompt_title = "decks",
-			finder = finders.new_table({
-				results = result_deck_names,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-					local deck_selection = action_state.get_selected_entry()
-					anki_state.quickdeck = deck_selection[1]
-				end)
-				return true
-			end,
-		})
-		:find()
+	pick_one("decks", result_deck_names, opts, function(deck_selection)
+		anki_state.quickdeck = deck_selection[1]
+	end)
 end
 
 M.note_entry_maker = function(entry)
@@ -482,94 +439,56 @@ M.edit_note = function(opts)
 		return
 	end
 
-	pickers
-		.new(opts, {
-			prompt_title = "decks",
-			finder = finders.new_table({
-				results = result_deck_names,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-					local deck_selection = action_state.get_selected_entry()
+	pick_one("decks", result_deck_names, opts, function(deck_selection)
+		local query = string.format('"deck:%s"', deck_selection[1])
+		local result_notes_info = safe_call(ankiconnect.deck_notes, query)
+		if not result_notes_info then
+			return
+		end
+		if next(result_notes_info) == nil then
+			vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
+			return
+		end
 
-					local query = string.format('"deck:%s"', deck_selection[1])
-					local result_notes_info = safe_call(ankiconnect.deck_notes, query)
-					if not result_notes_info then
-						return
-					end
-					if next(result_notes_info) == nil then
-						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
-						return
-					end
+		pick_one("notes", result_notes_info, opts, function(note_selection)
+			local sorted_fields = {}
+			-- Initialize table
+			for i = 0, M.table_length(note_selection.value.fields) do
+				sorted_fields[(i + 1)] = nil
+			end
+			for key, field in pairs(note_selection.value.fields) do
+				table.insert(sorted_fields, (field.order + 1), {
+					value = field.value,
+					name = key,
+				})
+			end
 
-					pickers
-						.new(opts, {
-							prompt_title = "notes",
-							finder = finders.new_table({
-								results = result_notes_info,
-								entry_maker = M.note_entry_maker,
-							}),
-							sorter = conf.generic_sorter(opts),
-							attach_mappings = function(prompt_bufnr, map)
-								actions.select_default:replace(function()
-									actions.close(prompt_bufnr)
+			local note = create_note(
+				deck_selection[1],
+				note_selection.value.modelName,
+				sorted_fields,
+				note_selection.value.noteId
+			)
 
-									local note_selection = action_state.get_selected_entry()
-									if not note_selection then
-										vim.notify("Empty selection", vim.log.levels.ERROR)
-										return false
-									end
+			-- Set the content of the tags buffers
+			vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
 
-									local sorted_fields = {}
+			-- Set the content of the fields buffers
+			for i, _ in ipairs(sorted_fields) do
+				vim.api.nvim_buf_set_lines(
+					note.fields[i].bufnr,
+					0,
+					-1,
+					false,
+					string.split(sorted_fields[i].value, "\n")
+				)
+			end
 
-									-- Initialize table
-									for i = 0, M.table_length(note_selection.value.fields) do
-										sorted_fields[(i + 1)] = nil
-									end
+			table.insert(anki_state.notes, note)
 
-									for key, field in pairs(note_selection.value.fields) do
-										table.insert(sorted_fields, (field.order + 1), {
-											value = field.value,
-											name = key,
-										})
-									end
-
-									local note = create_note(
-										deck_selection[1],
-										note_selection.value.modelName,
-										sorted_fields,
-										note_selection.value.noteId
-									)
-
-									-- Set the content of the tags buffers
-									vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
-
-									-- Set the content of the fields buffers
-									for i, _ in ipairs(sorted_fields) do
-										vim.api.nvim_buf_set_lines(
-											note.fields[i].bufnr,
-											0,
-											-1,
-											false,
-											string.split(sorted_fields[i].value, "\n")
-										)
-									end
-
-									table.insert(anki_state.notes, note)
-
-									M.display_note(note)
-								end)
-								return true
-							end,
-						})
-						:find()
-				end)
-				return true
-			end,
-		})
-		:find()
+			M.display_note(note)
+		end, M.note_entry_maker)
+	end)
 end
 
 M.pull_note = function(bufnr)
@@ -873,7 +792,7 @@ M.add_deck = function(arguments)
 
 	pickers
 		.new(opts, {
-			prompt_title = "Create or Select Deck",
+			prompt_title = "Create Deck",
 			finder = finders.new_table({
 				results = deck_names,
 			}),
