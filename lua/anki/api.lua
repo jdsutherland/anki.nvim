@@ -445,7 +445,7 @@ M.send_note = function(bufnr, kill)
 
 	-- Make sure the note stil exists in anki
 	if note_to_send.id then
-		local query = string.format('nid:%s', note_to_send.id)
+		local query = string.format("nid:%s", note_to_send.id)
 		local response_find_note = ankiconnect.find_notes(query)
 		if response_find_note.error ~= json.null then
 			vim.notify(vim.inspect(response_find_note.error), vim.log.levels.ERROR)
@@ -500,7 +500,7 @@ M.send_note = function(bufnr, kill)
 	else
 		-- -- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
 		if vim.g.anki_gui_browse_enabled then
-			local query = 'nid:1'
+			local query = "nid:1"
 			local response_start_gui_browse = ankiconnect.gui_browse(query)
 
 			if response_start_gui_browse.error ~= json.null then
@@ -730,7 +730,7 @@ M.delete_note = function(bufnr)
 	vim.notify("Anki Note Deleted")
 end
 
-M.pick_delete_note = function(opts)
+M.pick_delete_notes = function(opts)
 	local response_deck_names = ankiconnect.deck_names()
 	if response_deck_names.error ~= json.null then
 		vim.notify(vim.inspect(response_deck_names.error), vim.log.levels.ERROR)
@@ -812,7 +812,7 @@ M.pick_delete_note = function(opts)
 		:find()
 end
 
-M.pick_note_to_delete_from_quick_deck = function(opts)
+M.pick_notes_to_delete_from_quick_deck = function(opts)
 	if not anki_state.quickdeck then
 		return
 	end
@@ -886,22 +886,25 @@ M.infos = function()
 	-- Add the text content
 	local content = {
 		"--- Configuration",
-		"anki_url\t\t\t\t\t\t\t\t\t" .. vim.g.anki_url,
-		"anki_timeout\t\t\t\t\t\t\t" .. vim.g.anki_timeout,
-		"anki_prefix\t\t\t\t\t\t\t\t" .. vim.g.anki_prefix,
-		"anki_default_deck\t\t\t\t\t" .. vim.g.anki_quickdeck,
-		"anki_default_mappings\t\t\t" .. tostring(vim.g.anki_default_mappings),
-		"anki_gui_browse_enabled \t" .. tostring(vim.g.anki_gui_browse_enabled),
-		"",
+		"anki_url\t\t\t\t\t\t\t\t\t\t" .. vim.g.anki_url,
+		"anki_timeout\t\t\t\t\t\t\t\t" .. vim.g.anki_timeout,
+		"anki_prefix\t\t\t\t\t\t\t\t\t" .. vim.g.anki_prefix,
+		"anki_default_mappings\t\t\t\t" .. tostring(vim.g.anki_default_mappings),
+		"anki_quickdeck\t\t\t\t\t\t\t" .. vim.g.anki_quickdeck,
+		"anki_gui_browse_enabled \t\t" .. tostring(vim.g.anki_gui_browse_enabled),
+		"anki_custom_display\t\t\t\t\t" .. (vim.g.anki_custom_display and tostring(true) or tostring(false)),
+		"anki_custom_delete\t\t\t\t\t" .. (vim.g.anki_custom_delete and tostring(true) or tostring(false)),
+		"anki_after_edit_buffer_hook\t" .. (vim.g.anki_after_edit_buffer_hook and tostring(true) or tostring(false)),
+    "",
 		"--- State",
-		"selected_deck \t\t\t\t\t\t" .. anki_state.quickdeck,
-		"",
+		"quickdeck \t\t\t\t\t\t\t\t\t" .. anki_state.quickdeck,
+    "",
 		"--- Current Note",
 		(function()
 			if current_note then
-				return "id \t\t\t\t\t\t\t\t\t\t\t\t" .. tostring(current_note.id),
-					"deck \t\t\t\t\t\t\t\t\t\t\t" .. current_note.deck_name,
-					"model \t\t\t\t\t\t\t\t\t\t" .. current_note.model_name
+				return "id \t\t\t\t\t\t\t\t\t\t\t\t\t" .. tostring(current_note.id),
+					"deck \t\t\t\t\t\t\t\t\t\t\t\t" .. current_note.deck_name,
+					"model \t\t\t\t\t\t\t\t\t\t\t" .. current_note.model_name
 			else
 				return "Not in a note field buffer"
 			end
@@ -965,7 +968,7 @@ M.gui_note = function(bufnr)
 		return
 	end
 
-	local query = string.format('nid:%s', current_note.id)
+	local query = string.format("nid:%s", current_note.id)
 	local response_gui_browse = ankiconnect.gui_browse(query)
 	if response_gui_browse.error ~= json.null then
 		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
