@@ -52,7 +52,7 @@ local function setup_mappings()
     }},
     -- GUI Browse
     { "b", "GUI Browse", {
-      { "f", function() api.gui_deck() end, "To QuickDeck" },
+      { "q", function() api.gui_deck() end, "To QuickDeck" },
       { "d", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "To Current Note Deck" },
       { "n", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "To Current Note" },
     }},
@@ -62,7 +62,7 @@ local function setup_mappings()
   local single_mappings = {
     { "d", function() api.pick_notes_to_delete_from_quick_deck() end, "QuickDeck Delete Notes" },
     { "D", function() api.pick_delete_notes() end, "Delete Notes" },
-    { "f", function() api.select_state_quickdeck() end, "Select QuickDeck" },
+    { "q", function() api.select_state_quickdeck() end, "Select QuickDeck" },
     { "i", function() api.infos() end, "Infos" },
     { "c", function() api.add_deck() end, "Deck Create" },
     { "k", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill Current Note" },

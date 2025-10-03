@@ -745,7 +745,8 @@ M.infos = function()
 		"anki_gui_browse_enabled \t\t" .. tostring(config.options.gui_browse_enabled),
 		"anki_custom_display\t\t\t\t\t" .. (config.options.custom_display and tostring(true) or tostring(false)),
 		"anki_custom_delete\t\t\t\t\t" .. (config.options.custom_delete and tostring(true) or tostring(false)),
-		"anki_after_edit_buffer_hook\t" .. (config.options.after_edit_buffer_hook and tostring(true) or tostring(false)),
+		"anki_after_edit_buffer_hook\t"
+			.. (config.options.after_edit_buffer_hook and tostring(true) or tostring(false)),
 		"",
 		"--- State",
 		"quickdeck \t\t\t\t\t\t\t\t\t" .. anki_state.quickdeck,
