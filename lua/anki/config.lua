@@ -7,6 +7,7 @@ M.defaults = {
 	default_mappings = true,
 	quickdeck = "Refile",
 	gui_browse_enabled = true,
+	create_user_commands = true,
 	custom_display = nil,
 	custom_delete = nil,
 	after_edit_buffer_hook = nil,
