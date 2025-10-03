@@ -1,6 +1,6 @@
 local http_request = require("http.request")
 local http_headers = require("http.headers")
-local json = require("cjson")
+local json = require("rapidjson")
 
 local M = {}
 
@@ -24,11 +24,12 @@ local anki_connect_invoke = function(options)
 
 	local url = vim.g.anki_url
 
-	local post_data = json.encode({
+	local data = {
 		action = action,
 		version = version,
 		params = params,
-	})
+	}
+	local post_data = json.encode(data)
 
 	local headers = http_headers.new()
 	headers:upsert(":method", "POST")

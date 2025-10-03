@@ -44,12 +44,12 @@ if vim.g.anki_default_mappings then
 			{ vim.g.anki_prefix .. "Et",function() require("anki.api").edit_note({ display = "tabpage" }) end, desc = "Edit Note Tabpage" },
 			{ vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, desc = "Edit Note Custom" },
 
-			{ vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, desc = "QuickDeck Create" },
 			{ vim.g.anki_prefix .. "d",function() require("anki.api").pick_note_to_delete_from_quick_deck() end, desc = "QuickDeck Delete Note" },
 			{ vim.g.anki_prefix .. "D",function() require("anki.api").pick_delete_note() end, desc = "Delete Note" },
 
 			{ vim.g.anki_prefix .. "f",function() require("anki.api").select_state_quickdeck() end, desc = "Select QuickDeck" },
 			{ vim.g.anki_prefix .. "i",function() require("anki.api").infos() end, desc = "Infos" },
+			{ vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, desc = "Deck Create" },
 
 			{ vim.g.anki_prefix .. "k",function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end, desc = "Kill Current Note" },
 			{ vim.g.anki_prefix .. "w",function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end, desc = "Send Current Note" },
@@ -87,7 +87,7 @@ if vim.g.anki_default_mappings then
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Et",function() require("anki.api").edit_note({ display = "tabpage" }) end, {desc = "Edit Note Tabpage" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, {desc = "Edit Note Custom" })
 
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, {desc = "QuickDeck Create" })
+			vim.keymap.set({"n"}, vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, {desc = "Deck Create" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "d",function() require("anki.api").pick_note_to_delete_from_quick_deck() end, {desc = "QuickDeck Delete Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "D",function() require("anki.api").pick_delete_note() end, {desc = "Delete Note" })
 
@@ -161,7 +161,7 @@ if vim.g.anki_create_user_commands then
     nargs = 0,
   })
 
-  vim.api.nvim_create_user_command("AnkiQuickDeckCreate", function() require("anki.api").add_deck() end,
+  vim.api.nvim_create_user_command("AnkiDeckCreate", function() require("anki.api").add_deck() end,
   {
     desc = "[Anki] Create a deck",
     nargs = 0,

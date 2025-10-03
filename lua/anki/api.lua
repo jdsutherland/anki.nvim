@@ -1,4 +1,4 @@
-local json = require("cjson")
+local json = require("rapidjson")
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local actions = require("telescope.actions")
@@ -313,7 +313,7 @@ M.edit_note_from_quick_deck = function(arguments)
 	if not anki_state.quickdeck then
 		return
 	end
-	local query = "deck:" .. anki_state.quickdeck
+	local query = string.format('"deck:%s"', anki_state.quickdeck)
 	local response_find_notes = ankiconnect.find_notes(query)
 	if response_find_notes.error ~= json.null then
 		vim.notify(vim.inspect(response_find_notes.error), vim.log.levels.ERROR)
@@ -332,7 +332,7 @@ M.edit_note_from_quick_deck = function(arguments)
 	local notes_info = response_notes_info.result
 	if next(notes_info) == nil then
 		vim.notify("Deck is empty", vim.log.levels.ERROR)
-    return
+		return
 	end
 
 	pickers
@@ -445,7 +445,7 @@ M.send_note = function(bufnr, kill)
 
 	-- Make sure the note stil exists in anki
 	if note_to_send.id then
-		local query = "nid:" .. note_to_send.id
+		local query = string.format('nid:%s', note_to_send.id)
 		local response_find_note = ankiconnect.find_notes(query)
 		if response_find_note.error ~= json.null then
 			vim.notify(vim.inspect(response_find_note.error), vim.log.levels.ERROR)
@@ -489,7 +489,7 @@ M.send_note = function(bufnr, kill)
 		note_to_send.id = response_add_note.result
 
 		if vim.g.anki_gui_browse_enabled then
-			local query = "deck:" .. note_to_send.deck_name .. " nid:" .. note_to_send.id
+			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
 			local response_gui_browse = ankiconnect.gui_browse(query)
 
 			if response_gui_browse.error ~= json.null then
@@ -500,7 +500,7 @@ M.send_note = function(bufnr, kill)
 	else
 		-- -- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
 		if vim.g.anki_gui_browse_enabled then
-			local query = "nid:1"
+			local query = 'nid:1'
 			local response_start_gui_browse = ankiconnect.gui_browse(query)
 
 			if response_start_gui_browse.error ~= json.null then
@@ -517,7 +517,7 @@ M.send_note = function(bufnr, kill)
 		end
 
 		if vim.g.anki_gui_browse_enabled then
-			local query = "deck:" .. note_to_send.deck_name .. " nid:" .. note_to_send.id
+			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
 			local response_end_gui_browse = ankiconnect.gui_browse(query)
 
 			if response_end_gui_browse.error ~= json.null then
@@ -562,7 +562,7 @@ M.edit_note = function(opts)
 					actions.close(prompt_bufnr)
 					local deck_selection = action_state.get_selected_entry()
 
-					local query = "deck:" .. deck_selection[1]
+					local query = string.format('"deck:%s"', deck_selection[1])
 					local response_deck_notes = ankiconnect.deck_notes(query)
 					if response_deck_notes.error ~= json.null then
 						vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
@@ -572,7 +572,7 @@ M.edit_note = function(opts)
 					local notes_info = response_deck_notes.result
 					if next(notes_info) == nil then
 						vim.notify("Deck is empty", vim.log.levels.ERROR)
-            return
+						return
 					end
 
 					pickers
@@ -718,7 +718,7 @@ M.delete_note = function(bufnr)
 	end
 
 	if vim.g.anki_gui_browse_enabled then
-		local query = "deck:" .. note_to_delete.deck_name
+		local query = string.format('"deck:%s"', note_to_delete.deck_name)
 		local response_gui_browse = ankiconnect.gui_browse(query)
 		if response_gui_browse.error ~= json.null then
 			vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
@@ -751,7 +751,7 @@ M.pick_delete_note = function(opts)
 
 					local deck_selection = action_state.get_selected_entry()
 
-					local query = "deck:" .. deck_selection[1]
+					local query = string.format('"deck:%s"', deck_selection[1])
 					local response_deck_notes = ankiconnect.deck_notes(query)
 					if response_deck_notes.error ~= json.null then
 						vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
@@ -761,7 +761,7 @@ M.pick_delete_note = function(opts)
 					local notes_info = response_deck_notes.result
 					if next(notes_info) == nil then
 						vim.notify("Deck is empty", vim.log.levels.ERROR)
-            return
+						return
 					end
 
 					pickers
@@ -816,7 +816,7 @@ M.pick_note_to_delete_from_quick_deck = function(opts)
 	if not anki_state.quickdeck then
 		return
 	end
-	local query = "deck:" .. anki_state.quickdeck
+	local query = string.format('"deck:%s"', anki_state.quickdeck)
 	local response_deck_notes = ankiconnect.deck_notes(query)
 	if response_deck_notes.error ~= json.null then
 		vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
@@ -826,7 +826,7 @@ M.pick_note_to_delete_from_quick_deck = function(opts)
 	local notes_info = response_deck_notes.result
 	if next(notes_info) == nil then
 		vim.notify("Deck is empty", vim.log.levels.ERROR)
-    return
+		return
 	end
 
 	pickers
@@ -855,7 +855,7 @@ M.pick_note_to_delete_from_quick_deck = function(opts)
 					end
 
 					if vim.g.anki_gui_browse_enabled then
-						local query = "deck:" .. anki_state.quickdeck .. ""
+						local query = string.format('"deck:%s"', anki_state.quickdeck)
 						local response_gui_browse = ankiconnect.gui_browse(query)
 						if response_gui_browse.error ~= json.null then
 							vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
@@ -925,7 +925,7 @@ end
 
 M.gui_deck = function()
 	local deck = anki_state.quickdeck
-	local query = "deck:" .. deck
+	local query = string.format('"deck:%s"', deck)
 	local response_gui_browse = ankiconnect.gui_browse(query)
 	if response_gui_browse.error ~= json.null then
 		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
@@ -942,7 +942,7 @@ M.gui_deck_current = function(bufnr)
 	end
 	local current_note = anki_state.notes[found]
 
-	local query = "deck:" .. current_note.deck_name
+	local query = string.format('"deck:%s"', current_note.deck_name)
 	local response_gui_browse = ankiconnect.gui_browse(query)
 	if response_gui_browse.error ~= json.null then
 		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
@@ -965,7 +965,7 @@ M.gui_note = function(bufnr)
 		return
 	end
 
-	local query = "nid:" .. current_note.id
+	local query = string.format('nid:%s', current_note.id)
 	local response_gui_browse = ankiconnect.gui_browse(query)
 	if response_gui_browse.error ~= json.null then
 		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
