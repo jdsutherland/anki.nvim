@@ -30,27 +30,25 @@ local function safe_call(fn, ...)
 end
 
 local function create_note(deck_name, model_name, field_names, id)
-	local note = classes.Note:new({
-		fields = {},
-		tags = { bufnr = nil },
-		deck_name = deck_name,
-		model_name = model_name,
-		id = id,
-	})
+	local fields = {}
 
-	-- Tags buffer
-	note.tags.bufnr = vim.api.nvim_create_buf(true, true)
-
-	-- Field buffers
-	for _, name in ipairs(field_names or {}) do
+	for _, name in pairs(field_names) do
 		table.insert(
-			note.fields,
+			fields,
 			classes.Field:new({
 				bufnr = vim.api.nvim_create_buf(true, true),
 				name = name,
 			})
 		)
 	end
+
+	local note = classes.Note:new({
+		fields = fields,
+		tags = { bufnr = vim.api.nvim_create_buf(true, true) },
+		deck_name = deck_name,
+		model_name = model_name,
+		id = id,
+	})
 
 	return note
 end
@@ -292,10 +290,15 @@ M.edit_note_from_quick_deck = function(arguments)
 						})
 					end
 
+					local fields_names = {}
+					for key, field in pairs(sorted_fields) do
+						table.insert(fields_names, field.name)
+					end
+
 					local note = create_note(
 						anki_state.quickdeck,
 						note_selection.value.modelName,
-						sorted_fields,
+						fields_names,
 						note_selection.value.noteId
 					)
 
@@ -349,7 +352,6 @@ M.kill_all = function()
 	vim.notify("Cleaned up " .. #notes_to_clean .. " Anki note(s).")
 end
 
-
 M.send_note = function(bufnr, kill)
 	kill = kill or nil
 	local found = M.search_for_note(bufnr)
@@ -360,13 +362,9 @@ M.send_note = function(bufnr, kill)
 
 	local note_to_send = anki_state.notes[found]
 
-	local fields = {}
-
-	for _, field in pairs(note_to_send.fields) do
-		fields[field.name] = vim.fn.join(vim.api.nvim_buf_get_lines(field.bufnr, 0, -1, false), " ")
-	end
-
-	local tags = vim.api.nvim_buf_get_lines(note_to_send.tags.bufnr, 0, -1, false)
+	local content = note_to_send:get_content_from_buffers()
+	local fields = content.fields
+	local tags = content.tags
 
 	local msg_status = (note_to_send.id == nil) or false and true
 
@@ -484,10 +482,15 @@ M.edit_note = function(opts)
 				})
 			end
 
+			local fields_names = {}
+			for key, field in pairs(sorted_fields) do
+				table.insert(fields_names, field.name)
+			end
+
 			local note = create_note(
 				deck_selection[1],
 				note_selection.value.modelName,
-				sorted_fields,
+				fields_names,
 				note_selection.value.noteId
 			)
 
