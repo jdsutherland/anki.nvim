@@ -737,7 +737,6 @@ M.pick_delete_notes = function(opts)
 		return
 	end
 	local deck_names = response_deck_names.result
-
 	pickers
 		.new(opts, {
 			prompt_title = "decks",
@@ -774,31 +773,51 @@ M.pick_delete_notes = function(opts)
 							sorter = conf.generic_sorter(opts),
 							attach_mappings = function(prompt_bufnr, map)
 								actions.select_default:replace(function()
+									local picker = action_state.get_current_picker(prompt_bufnr)
+									local multi = picker:get_multi_selection()
+
 									actions.close(prompt_bufnr)
+									if vim.tbl_isempty(multi) then
+										local note_selection = action_state.get_selected_entry()
+										if not note_selection then
+											vim.notify("Empty selection", vim.log.levels.ERROR)
+											return false
+										end
+										local note_id_to_delete = note_selection.value.noteId
 
-									local note_selection = action_state.get_selected_entry()
-									if not note_selection then
-										vim.notify("Empty selection", vim.log.levels.ERROR)
-										return false
-									end
-									local note_id_to_delete = note_selection.value.noteId
-
-									local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
-									if response_delete_note.error ~= json.null then
-										vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
-										return
-									end
-
-									if vim.g.anki_gui_browse_enabled then
-										local response_gui_browse =
-											ankiconnect.gui_browse("deck:" .. deck_selection[1] .. "")
-										if response_gui_browse.error ~= json.null then
-											vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
+										local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
+										if response_delete_note.error ~= json.null then
+											vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
 											return
+										else
+											vim.notify("Anki Note Deleted")
+										end
+									else
+										for _, note in ipairs(multi) do
+											local note_id_to_delete = note.value.noteId
+											local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
+											if response_delete_note.error ~= json.null then
+												vim.notify(
+													vim.inspect(response_delete_note.error),
+													vim.log.levels.ERROR
+												)
+												return
+											else
+												vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
+											end
 										end
 									end
 
-									vim.notify("Anki Note Deleted")
+									if vim.g.anki_gui_browse_enabled then
+										local query = string.format('"deck:%s"', deck_selection[1])
+										local response_gui_browse = ankiconnect.gui_browse(query)
+										if response_gui_browse.error ~= json.null then
+											vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
+											return
+										else
+											vim.notify("Anki Gui Browsed to deck " .. deck_selection[1])
+										end
+									end
 									return true
 								end)
 								return true
@@ -839,19 +858,37 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
 				actions.select_default:replace(function()
+					local picker = action_state.get_current_picker(prompt_bufnr)
+					local multi = picker:get_multi_selection()
+
 					actions.close(prompt_bufnr)
 
-					local note_selection = action_state.get_selected_entry()
-					if not note_selection then
-						vim.notify("Empty selection", vim.log.levels.ERROR)
-						return false
-					end
-					local note_id_to_delete = note_selection.value.noteId
+					if vim.tbl_isempty(multi) then
+						local note_selection = action_state.get_selected_entry()
+						if not note_selection then
+							vim.notify("Empty selection", vim.log.levels.ERROR)
+							return false
+						end
+						local note_id_to_delete = note_selection.value.noteId
 
-					local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
-					if response_delete_note.error ~= json.null then
-						vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
-						return
+						local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
+						if response_delete_note.error ~= json.null then
+							vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
+							return
+						else
+							vim.notify("Anki Note Deleted")
+						end
+					else
+						for _, note in ipairs(multi) do
+							local note_id_to_delete = note.value.noteId
+							local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
+							if response_delete_note.error ~= json.null then
+								vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
+								return
+							else
+								vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
+							end
+						end
 					end
 
 					if vim.g.anki_gui_browse_enabled then
@@ -860,10 +897,11 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 						if response_gui_browse.error ~= json.null then
 							vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
 							return
+						else
+							vim.notify("Anki Gui Browsed to deck " .. anki_state.quickdeck)
 						end
 					end
 
-					vim.notify("Anki Note Deleted")
 					return true
 				end)
 				return true
@@ -895,10 +933,10 @@ M.infos = function()
 		"anki_custom_display\t\t\t\t\t" .. (vim.g.anki_custom_display and tostring(true) or tostring(false)),
 		"anki_custom_delete\t\t\t\t\t" .. (vim.g.anki_custom_delete and tostring(true) or tostring(false)),
 		"anki_after_edit_buffer_hook\t" .. (vim.g.anki_after_edit_buffer_hook and tostring(true) or tostring(false)),
-    "",
+		"",
 		"--- State",
 		"quickdeck \t\t\t\t\t\t\t\t\t" .. anki_state.quickdeck,
-    "",
+		"",
 		"--- Current Note",
 		(function()
 			if current_note then
