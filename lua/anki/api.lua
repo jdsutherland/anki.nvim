@@ -21,6 +21,15 @@ function string.split(inputstr, sep)
 	return t
 end
 
+local function safe_call(fn, ...)
+	local response = fn(...)
+	if response.error ~= json.null then
+		vim.notify(vim.inspect(response.error), vim.log.levels.ERROR)
+		return nil
+	end
+	return response.result
+end
+
 M.table_length = function(tbl)
 	local length = 0
 	for key, value in pairs(tbl) do
@@ -57,7 +66,7 @@ M.delete_note_buffers = function(note)
 end
 
 M.display_note = function(note, display)
-	require("anki.state").counter = require("anki.state").counter + 1
+	anki_state.counter = anki_state.counter + 1
 	if display == "custom" then
 		vim.g.anki_custom_display(note)
 	else
@@ -93,26 +102,20 @@ M.add_note = function(arguments)
 	local opts = arguments.opts or {}
 	local display = arguments.display or nil
 
-	local response_deck_names = ankiconnect.deck_names()
-	if response_deck_names.error ~= json.null then
-		vim.notify(vim.inspect(response_deck_names.error), vim.log.levels.ERROR)
+	local result_deck_names = safe_call(ankiconnect.deck_names)
+	if not result_deck_names then
 		return
 	end
-	local deck_names = response_deck_names.result
-
-	local response_model_names = ankiconnect.model_names()
-	if response_model_names.error ~= json.null then
-		vim.notify(vim.inspect(response_model_names.error), vim.log.levels.ERROR)
+	local result_model_names = safe_call(ankiconnect.model_names)
+	if not result_model_names then
 		return
 	end
-
-	local model_names = response_model_names.result
 
 	pickers
 		.new(opts, {
 			prompt_title = "decks",
 			finder = finders.new_table({
-				results = deck_names,
+				results = result_deck_names,
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
@@ -125,7 +128,7 @@ M.add_note = function(arguments)
 						.new(opts, {
 							prompt_title = "models",
 							finder = finders.new_table({
-								results = model_names,
+								results = result_model_names,
 							}),
 							sorter = conf.generic_sorter(opts),
 							attach_mappings = function(prompt_bufnr, map)
@@ -134,12 +137,11 @@ M.add_note = function(arguments)
 
 									local model_selection = action_state.get_selected_entry()
 
-									local response_model_field_names = ankiconnect.model_field_names(model_selection[1])
-									if response_model_field_names.error ~= json.null then
-										vim.notify(vim.inspect(response_model_field_names.error), vim.log.levels.ERROR)
+									local result_field_names =
+										safe_call(ankiconnect.model_field_names, model_selection[1])
+									if not result_field_names then
 										return
 									end
-									local field_names = response_model_field_names.result
 
 									local note = classes.Note:new({
 										fields = {},
@@ -154,7 +156,7 @@ M.add_note = function(arguments)
 									note.tags.bufnr = vim.api.nvim_create_buf(true, true)
 
 									-- Create buffers for the note fields
-									for _, name in ipairs(field_names) do
+									for _, name in ipairs(result_field_names) do
 										table.insert(
 											note.fields,
 											classes.Field:new({
@@ -188,18 +190,16 @@ M.add_note_to_quick_deck = function(arguments)
 		return
 	end
 
-	local response_model_names = ankiconnect.model_names()
-	if response_model_names.error ~= json.null then
-		vim.notify(vim.inspect(response_model_names.error), vim.log.levels.ERROR)
+	local result_model_names = safe_call(ankiconnect.model_names)
+	if not result_model_names then
 		return
 	end
-	local model_names = response_model_names.result
 
 	pickers
 		.new(opts, {
 			prompt_title = "models",
 			finder = finders.new_table({
-				results = model_names,
+				results = result_model_names,
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
@@ -208,12 +208,10 @@ M.add_note_to_quick_deck = function(arguments)
 
 					local model_selection = action_state.get_selected_entry()
 
-					local response_model_field_names = ankiconnect.model_field_names(model_selection[1])
-					if response_model_field_names.error ~= json.null then
-						vim.notify(vim.inspect(response_model_field_names.error), vim.log.levels.ERROR)
+					local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
+					if not result_field_names then
 						return
 					end
-					local field_names = response_model_field_names.result
 
 					local note = classes.Note:new({
 						fields = {},
@@ -228,7 +226,7 @@ M.add_note_to_quick_deck = function(arguments)
 					note.tags.bufnr = vim.api.nvim_create_buf(true, true)
 
 					-- Create buffers for the note fields
-					for _, name in ipairs(field_names) do
+					for _, name in ipairs(result_field_names) do
 						table.insert(
 							note.fields,
 							classes.Field:new({
@@ -250,18 +248,15 @@ end
 
 M.select_state_quickdeck = function(opts)
 	opts = opts or {}
-	local response_deck_names = ankiconnect.deck_names()
-	if response_deck_names.error ~= json.null then
-		vim.notify(vim.inspect(response_deck_names.error), vim.log.levels.ERROR)
+	local result_deck_names = safe_call(ankiconnect.deck_names)
+	if not result_deck_names then
 		return
 	end
-	local deck_names = response_deck_names.result
-
 	pickers
 		.new(opts, {
 			prompt_title = "decks",
 			finder = finders.new_table({
-				results = deck_names,
+				results = result_deck_names,
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
@@ -314,23 +309,16 @@ M.edit_note_from_quick_deck = function(arguments)
 		return
 	end
 	local query = string.format('"deck:%s"', anki_state.quickdeck)
-	local response_find_notes = ankiconnect.find_notes(query)
-	if response_find_notes.error ~= json.null then
-		vim.notify(vim.inspect(response_find_notes.error), vim.log.levels.ERROR)
+	local result_notes_ids = safe_call(ankiconnect.find_notes, query)
+	if not result_notes_ids then
+		return
+	end
+	local result_notes_info = safe_call(ankiconnect.notes_info, result_notes_ids)
+	if not result_notes_info then
 		return
 	end
 
-	local notes_ids = response_find_notes.result
-
-	local response_notes_info = ankiconnect.notes_info(notes_ids)
-
-	if response_notes_info.error ~= json.null then
-		vim.notify(vim.inspect(response_notes_info.error), vim.log.levels.ERROR)
-		return
-	end
-
-	local notes_info = response_notes_info.result
-	if next(notes_info) == nil then
+	if next(result_notes_info) == nil then
 		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
 		return
 	end
@@ -339,7 +327,7 @@ M.edit_note_from_quick_deck = function(arguments)
 		.new(opts, {
 			prompt_title = "notes",
 			finder = finders.new_table({
-				results = notes_info,
+				results = result_notes_info,
 				entry_maker = M.note_entry_maker,
 			}),
 			sorter = conf.generic_sorter(opts),
@@ -446,13 +434,11 @@ M.send_note = function(bufnr, kill)
 	-- Make sure the note stil exists in anki
 	if note_to_send.id then
 		local query = string.format("nid:%s", note_to_send.id)
-		local response_find_note = ankiconnect.find_notes(query)
-		if response_find_note.error ~= json.null then
-			vim.notify(vim.inspect(response_find_note.error), vim.log.levels.ERROR)
+		local result_notes = safe_call(ankiconnect.find_notes, query)
+		if not result_notes then
 			return
 		end
-
-		if #response_find_note.result == 0 then
+		if #result_notes == 0 then
 			note_to_send.id = nil
 			anki_state.notes[found].id = nil
 		end
@@ -461,15 +447,18 @@ M.send_note = function(bufnr, kill)
 	local can_add_note = true
 
 	-- Make sure we can add the note
-	local response_can_add_notes_with_error_details =
-		ankiconnect.can_add_notes_with_error_details(note_to_send.deck_name, note_to_send.model_name, fields, tags)
-
-	if response_can_add_notes_with_error_details.error ~= json.null then
-		vim.notify(vim.inspect(response_can_add_notes_with_error_details.error), vim.log.levels.ERROR)
+	local result_can_add_note = safe_call(
+		ankiconnect.can_add_notes_with_error_details,
+		note_to_send.deck_name,
+		note_to_send.model_name,
+		fields,
+		tags
+	)
+	if not result_can_add_note then
 		return
 	end
 
-	if response_can_add_notes_with_error_details.result[1].canAdd then
+	if result_can_add_note[1].canAdd then
 		can_add_note = true
 	end
 
@@ -479,57 +468,35 @@ M.send_note = function(bufnr, kill)
 	end
 
 	if note_to_send.id == nil and can_add_note then
-		local response_add_note = ankiconnect.add_note(note_to_send.deck_name, note_to_send.model_name, fields, tags)
-
-		if response_add_note.error ~= json.null then
-			vim.notify(vim.inspect(response_add_note.error), vim.log.levels.ERROR)
+		local result_note_id =
+			safe_call(ankiconnect.add_note, note_to_send.deck_name, note_to_send.model_name, fields, tags)
+		if not result_note_id then
 			return
 		end
 
-		note_to_send.id = response_add_note.result
+		note_to_send.id = result_note_id
 
 		if vim.g.anki_gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
-			local response_gui_browse = ankiconnect.gui_browse(query)
-
-			if response_gui_browse.error ~= json.null then
-				vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-				return
-			end
+			local _ = safe_call(ankiconnect.gui_browse, query)
 		end
 	else
 		-- -- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
 		if vim.g.anki_gui_browse_enabled then
 			local query = "nid:1"
-			local response_start_gui_browse = ankiconnect.gui_browse(query)
-
-			if response_start_gui_browse.error ~= json.null then
-				vim.notify(vim.inspect(response_start_gui_browse.error), vim.log.levels.ERROR)
-				return
-			end
+			local _ = safe_call(ankiconnect.gui_browse, query)
 		end
 
-		local response_update_note = ankiconnect.update_note(note_to_send.id, fields, tags)
-
-		if response_update_note.error ~= json.null then
-			vim.notify(vim.inspect(response_update_note.error), vim.log.levels.ERROR)
-			return
-		end
+		local _ = safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
 
 		if vim.g.anki_gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
-			local response_end_gui_browse = ankiconnect.gui_browse(query)
-
-			if response_end_gui_browse.error ~= json.null then
-				vim.notify(vim.inspect(response_end_gui_browse.error), vim.log.levels.ERROR)
-				return
-			end
+			local _ = safe_call(ankiconnect.gui_browse, query)
 		end
 	end
 
 	if kill then
 		M.delete_note_buffers(note_to_send)
-
 		table.remove(anki_state.notes, found)
 	end
 
@@ -543,18 +510,16 @@ end
 M.edit_note = function(opts)
 	opts = opts or {}
 
-	local response_deck_names = ankiconnect.deck_names()
-	if response_deck_names.error ~= json.null then
-		vim.notify(vim.inspect(response_deck_names.error), vim.log.levels.ERROR)
+	local result_deck_names = safe_call(ankiconnect.deck_names)
+	if not result_deck_names then
 		return
 	end
-	local deck_names = response_deck_names.result
 
 	pickers
 		.new(opts, {
 			prompt_title = "decks",
 			finder = finders.new_table({
-				results = deck_names,
+				results = result_deck_names,
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
@@ -563,14 +528,11 @@ M.edit_note = function(opts)
 					local deck_selection = action_state.get_selected_entry()
 
 					local query = string.format('"deck:%s"', deck_selection[1])
-					local response_deck_notes = ankiconnect.deck_notes(query)
-					if response_deck_notes.error ~= json.null then
-						vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
+					local result_notes_info = safe_call(ankiconnect.deck_notes, query)
+					if not result_notes_info then
 						return
 					end
-
-					local notes_info = response_deck_notes.result
-					if next(notes_info) == nil then
+					if next(result_notes_info) == nil then
 						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
 						return
 					end
@@ -579,7 +541,7 @@ M.edit_note = function(opts)
 						.new(opts, {
 							prompt_title = "notes",
 							finder = finders.new_table({
-								results = notes_info,
+								results = result_notes_info,
 								entry_maker = M.note_entry_maker,
 							}),
 							sorter = conf.generic_sorter(opts),
@@ -676,15 +638,13 @@ M.pull_note = function(bufnr)
 	end
 
 	-- get the note infos
-	local response_notes_info = ankiconnect.notes_info({ note_to_pull.id })
-
-	if response_notes_info.error ~= json.null then
-		vim.notify(vim.inspect(response_notes_info.error), vim.log.levels.ERROR)
+	local result_notes_info = safe_call(ankiconnect.notes_info, { note_to_pull.id })
+	if not result_notes_info then
 		return
 	end
-	local notes_info = response_notes_info.result[1]
+	local first_note = result_notes_info[1]
 
-	for key, field in pairs(notes_info.fields) do
+	for key, field in pairs(first_note.fields) do
 		local field_found_in_note = note_to_pull:find_field_by_name(key)
 		if field_found_in_note then
 			vim.api.nvim_buf_set_lines(
@@ -711,19 +671,11 @@ M.delete_note = function(bufnr)
 		return
 	end
 
-	local response_delete_note = ankiconnect.delete_notes({ note_to_delete.id })
-	if response_delete_note.error ~= json.null then
-		vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
-		return
-	end
+	local _ = safe_call(ankiconnect.delete_notes, { note_to_delete.id })
 
 	if vim.g.anki_gui_browse_enabled then
 		local query = string.format('"deck:%s"', note_to_delete.deck_name)
-		local response_gui_browse = ankiconnect.gui_browse(query)
-		if response_gui_browse.error ~= json.null then
-			vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-			return
-		end
+		local _ = safe_call(ankiconnect.gui_browse, query)
 	end
 
 	note_to_delete.id = nil
@@ -731,17 +683,15 @@ M.delete_note = function(bufnr)
 end
 
 M.pick_delete_notes = function(opts)
-	local response_deck_names = ankiconnect.deck_names()
-	if response_deck_names.error ~= json.null then
-		vim.notify(vim.inspect(response_deck_names.error), vim.log.levels.ERROR)
+	local result_deck_names = safe_call(ankiconnect.deck_names)
+	if not result_deck_names then
 		return
 	end
-	local deck_names = response_deck_names.result
 	pickers
 		.new(opts, {
 			prompt_title = "decks",
 			finder = finders.new_table({
-				results = deck_names,
+				results = result_deck_names,
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
@@ -751,14 +701,11 @@ M.pick_delete_notes = function(opts)
 					local deck_selection = action_state.get_selected_entry()
 
 					local query = string.format('"deck:%s"', deck_selection[1])
-					local response_deck_notes = ankiconnect.deck_notes(query)
-					if response_deck_notes.error ~= json.null then
-						vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
+					local result_deck_notes = safe_call(ankiconnect.deck_notes, query)
+					if not result_deck_notes then
 						return
 					end
-
-					local notes_info = response_deck_notes.result
-					if next(notes_info) == nil then
+					if next(result_deck_notes) == nil then
 						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
 						return
 					end
@@ -767,7 +714,7 @@ M.pick_delete_notes = function(opts)
 						.new(opts, {
 							prompt_title = "notes",
 							finder = finders.new_table({
-								results = notes_info,
+								results = result_deck_notes,
 								entry_maker = M.note_entry_maker,
 							}),
 							sorter = conf.generic_sorter(opts),
@@ -785,38 +732,20 @@ M.pick_delete_notes = function(opts)
 										end
 										local note_id_to_delete = note_selection.value.noteId
 
-										local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
-										if response_delete_note.error ~= json.null then
-											vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
-											return
-										else
-											vim.notify("Anki Note Deleted")
-										end
+										local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+										vim.notify("Anki Note Deleted")
 									else
 										for _, note in ipairs(multi) do
 											local note_id_to_delete = note.value.noteId
-											local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
-											if response_delete_note.error ~= json.null then
-												vim.notify(
-													vim.inspect(response_delete_note.error),
-													vim.log.levels.ERROR
-												)
-												return
-											else
-												vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
-											end
+											local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+											vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
 										end
 									end
 
 									if vim.g.anki_gui_browse_enabled then
 										local query = string.format('"deck:%s"', deck_selection[1])
-										local response_gui_browse = ankiconnect.gui_browse(query)
-										if response_gui_browse.error ~= json.null then
-											vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-											return
-										else
-											vim.notify("Anki Gui Browsed to deck " .. deck_selection[1])
-										end
+										local _ = safe_call(ankiconnect.gui_browse, query)
+										vim.notify("Anki Gui Browsed to deck " .. deck_selection[1])
 									end
 									return true
 								end)
@@ -836,14 +765,12 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 		return
 	end
 	local query = string.format('"deck:%s"', anki_state.quickdeck)
-	local response_deck_notes = ankiconnect.deck_notes(query)
-	if response_deck_notes.error ~= json.null then
-		vim.notify(vim.inspect(response_deck_notes.error), vim.log.levels.ERROR)
+	local result_deck_notes = safe_call(ankiconnect.deck_notes, query)
+	if not result_deck_notes then
 		return
 	end
 
-	local notes_info = response_deck_notes.result
-	if next(notes_info) == nil then
+	if next(result_deck_notes) == nil then
 		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
 		return
 	end
@@ -852,7 +779,7 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 		.new(opts, {
 			prompt_title = "notes",
 			finder = finders.new_table({
-				results = notes_info,
+				results = result_deck_notes,
 				entry_maker = M.note_entry_maker,
 			}),
 			sorter = conf.generic_sorter(opts),
@@ -871,35 +798,20 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 						end
 						local note_id_to_delete = note_selection.value.noteId
 
-						local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
-						if response_delete_note.error ~= json.null then
-							vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
-							return
-						else
-							vim.notify("Anki Note Deleted")
-						end
+						local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+						vim.notify("Anki Note Deleted")
 					else
 						for _, note in ipairs(multi) do
 							local note_id_to_delete = note.value.noteId
-							local response_delete_note = ankiconnect.delete_notes({ note_id_to_delete })
-							if response_delete_note.error ~= json.null then
-								vim.notify(vim.inspect(response_delete_note.error), vim.log.levels.ERROR)
-								return
-							else
-								vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
-							end
+							local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+							vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
 						end
 					end
 
 					if vim.g.anki_gui_browse_enabled then
 						local query = string.format('"deck:%s"', anki_state.quickdeck)
-						local response_gui_browse = ankiconnect.gui_browse(query)
-						if response_gui_browse.error ~= json.null then
-							vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-							return
-						else
-							vim.notify("Anki Gui Browsed to deck " .. anki_state.quickdeck)
-						end
+						local _ = safe_call(ankiconnect.gui_browse, query)
+						vim.notify("Anki Gui Browsed to deck " .. anki_state.quickdeck)
 					end
 
 					return true
@@ -967,11 +879,7 @@ end
 M.gui_deck = function()
 	local deck = anki_state.quickdeck
 	local query = string.format('"deck:%s"', deck)
-	local response_gui_browse = ankiconnect.gui_browse(query)
-	if response_gui_browse.error ~= json.null then
-		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-		return
-	end
+	local _ = safe_call(ankiconnect.gui_browse, query)
 	vim.notify("Anki Gui Browsed to " .. deck .. " deck")
 end
 
@@ -984,11 +892,7 @@ M.gui_deck_current = function(bufnr)
 	local current_note = anki_state.notes[found]
 
 	local query = string.format('"deck:%s"', current_note.deck_name)
-	local response_gui_browse = ankiconnect.gui_browse(query)
-	if response_gui_browse.error ~= json.null then
-		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-		return
-	end
+	local _ = safe_call(ankiconnect.gui_browse, query)
 	vim.notify("Anki Gui Browsed to " .. current_note.deck_name .. " deck")
 end
 
@@ -1007,11 +911,7 @@ M.gui_note = function(bufnr)
 	end
 
 	local query = string.format("nid:%s", current_note.id)
-	local response_gui_browse = ankiconnect.gui_browse(query)
-	if response_gui_browse.error ~= json.null then
-		vim.notify(vim.inspect(response_gui_browse.error), vim.log.levels.ERROR)
-		return
-	end
+	local _ = safe_call(ankiconnect.gui_browse, query)
 	vim.notify("Anki Gui Browsed to " .. current_note.id .. " note id")
 end
 
@@ -1019,12 +919,10 @@ M.add_deck = function(arguments)
 	arguments = arguments or {}
 	local opts = arguments.opts or {}
 
-	local response = ankiconnect.deck_names()
-	if response.error ~= json.null then
-		vim.notify(vim.inspect(response.error), vim.log.levels.ERROR)
+	local deck_names = safe_call(ankiconnect.deck_names)
+	if not deck_names then
 		return
 	end
-	local deck_names = response.result
 
 	pickers
 		.new(opts, {
@@ -1044,12 +942,8 @@ M.add_deck = function(arguments)
 						vim.notify("No deck name provided", vim.log.levels.WARN)
 						return
 					end
-					local result = ankiconnect.create_deck(deck_to_create)
-					if result.error ~= json.null then
-						vim.notify(vim.inspect(result.error), vim.log.levels.ERROR)
-					else
-						vim.notify("Deck '" .. deck_to_create .. "' created (or already existed).")
-					end
+					local _ = safe_call(ankiconnect.create_deck, deck_to_create)
+					vim.notify("Deck '" .. deck_to_create .. "' created (or already existed).")
 				end)
 				return true
 			end,
