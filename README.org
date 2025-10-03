@@ -78,16 +78,14 @@ These groups are then followed by a second letter that specifies *how* to displa
 
 *** Note Management Groups
 
-These groups are for adding, editing, or deleting notes.
+These groups are for adding or editing notes.
 For example, to add a note to the QuickDeck and open the buffers in a new vertical split, you would use =<prefix>av=.
 
-| Group       | Description                                    |
-| =<prefix>a= | **A**dd a note to the QuickDeck.               |
-| =<prefix>A= | **A**dd a note (prompts to choose a deck).     |
-| =<prefix>e= | **E**dit a note from the QuickDeck.            |
-| =<prefix>E= | **E**dit a note (prompts to choose a deck).    |
-| =<prefix>d= | **D**elete a note from the QuickDeck.          |
-| =<prefix>D= | **D**elete a note (prompts to choose a deck).  |
+| Group       | Description                                   |
+| =<prefix>a= | **A**dd a note to the QuickDeck.              |
+| =<prefix>A= | **A**dd a note (prompts to choose a deck).    |
+| =<prefix>e= | **E**dit a note from the QuickDeck.           |
+| =<prefix>E= | **E**dit a note (prompts to choose a deck).   |
 
 *** GUI Browsing Group
 
@@ -101,13 +99,15 @@ The =<prefix>b= group is for opening the Anki GUI to a specific location.
 ***Other Keymaps***
 
 | Keymap      | Description                                     |
+| =<prefix>d= | **D**elete a note from the QuickDeck.           |
+| =<prefix>D= | **D**elete a note (prompts to choose a deck).   |
 | =<prefix>q= | Select the **Q**uickDeck.                       |
 | =<prefix>i= | Show **i**nformation about the plugin.          |
 | =<prefix>c= | **C**reate a new deck.                          |
-| =<prefix>w= | **W**rite (send) the current note to Anki.      |
-| =<prefix>p= | **P**ull the current note from Anki.            |
 | =<prefix>k= | **K**ill the current note's buffers.            |
 | =<prefix>K= | **K**ill all note buffers.                      |
+| =<prefix>w= | **W**rite (send) the current note to Anki.      |
+| =<prefix>p= | **P**ull the current note from Anki.            |
 | =<prefix>r= | **R**emove (delete) the current note from Anki. |
 
 
