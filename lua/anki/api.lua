@@ -30,6 +30,32 @@ local function safe_call(fn, ...)
 	return response.result
 end
 
+local function create_note(deck_name, model_name, field_names, id)
+	local note = classes.Note:new({
+		fields = {},
+		tags = { bufnr = nil },
+		deck_name = deck_name,
+		model_name = model_name,
+		id = id,
+	})
+
+	-- Tags buffer
+	note.tags.bufnr = vim.api.nvim_create_buf(true, true)
+
+	-- Field buffers
+	for _, name in ipairs(field_names or {}) do
+		table.insert(
+			note.fields,
+			classes.Field:new({
+				bufnr = vim.api.nvim_create_buf(true, true),
+				name = name,
+			})
+		)
+	end
+
+	return note
+end
+
 M.table_length = function(tbl)
 	local length = 0
 	for key, value in pairs(tbl) do
@@ -143,28 +169,7 @@ M.add_note = function(arguments)
 										return
 									end
 
-									local note = classes.Note:new({
-										fields = {},
-										tags = {
-											bufnr = nil,
-										},
-										deck_name = deck_selection[1],
-										model_name = model_selection[1],
-									})
-
-									-- Create the tags buffer
-									note.tags.bufnr = vim.api.nvim_create_buf(true, true)
-
-									-- Create buffers for the note fields
-									for _, name in ipairs(result_field_names) do
-										table.insert(
-											note.fields,
-											classes.Field:new({
-												bufnr = vim.api.nvim_create_buf(true, true),
-												name = name,
-											})
-										)
-									end
+									local note = create_note(deck_selection[1], model_selection[1], result_field_names)
 
 									table.insert(anki_state.notes, note)
 
@@ -213,28 +218,7 @@ M.add_note_to_quick_deck = function(arguments)
 						return
 					end
 
-					local note = classes.Note:new({
-						fields = {},
-						tags = {
-							bufnr = nil,
-						},
-						deck_name = anki_state.quickdeck,
-						model_name = model_selection[1],
-					})
-
-					-- Create the tags buffer
-					note.tags.bufnr = vim.api.nvim_create_buf(true, true)
-
-					-- Create buffers for the note fields
-					for _, name in ipairs(result_field_names) do
-						table.insert(
-							note.fields,
-							classes.Field:new({
-								bufnr = vim.api.nvim_create_buf(true, true),
-								name = name,
-							})
-						)
-					end
+					local note = create_note(anki_state.quickdeck, model_selection[1], result_field_names)
 
 					table.insert(anki_state.notes, note)
 
@@ -340,18 +324,8 @@ M.edit_note_from_quick_deck = function(arguments)
 						return false
 					end
 
-					local note = classes.Note:new({
-						fields = {},
-						tags = {
-							bufnr = nil,
-						},
-						id = note_selection.value.noteId,
-						model_name = note_selection.value.modelName,
-						deck_name = anki_state.quickdeck,
-					})
-
 					local sorted_fields = {}
-					-- Initialize table
+
 					for i = 0, M.table_length(note_selection.value.fields) do
 						sorted_fields[(i + 1)] = nil
 					end
@@ -363,19 +337,12 @@ M.edit_note_from_quick_deck = function(arguments)
 						})
 					end
 
-					-- Create the tag buffer
-					note.tags.bufnr = vim.api.nvim_create_buf(true, true)
-
-					-- Create the fields buffers
-					for _, field in pairs(sorted_fields) do
-						table.insert(
-							note.fields,
-							classes.Field:new({
-								bufnr = vim.api.nvim_create_buf(true, true),
-								name = field.name,
-							})
-						)
-					end
+					local note = create_note(
+						anki_state.quickdeck,
+						note_selection.value.modelName,
+						sorted_fields,
+						note_selection.value.noteId
+					)
 
 					-- Set the content of the tags buffers
 					vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
@@ -555,19 +522,6 @@ M.edit_note = function(opts)
 										return false
 									end
 
-									-- Create the note
-									--TODO: Initilize the buffers in a constructor ?
-
-									local note = classes.Note:new({
-										fields = {},
-										tags = {
-											bufnr = nil,
-										},
-										id = note_selection.value.noteId,
-										model_name = note_selection.value.modelName,
-										deck_name = deck_selection[1],
-									})
-
 									local sorted_fields = {}
 
 									-- Initialize table
@@ -582,19 +536,12 @@ M.edit_note = function(opts)
 										})
 									end
 
-									-- Create the fields buffers
-									for _, field in pairs(sorted_fields) do
-										table.insert(
-											note.fields,
-											classes.Field:new({
-												bufnr = vim.api.nvim_create_buf(true, true),
-												name = field.name,
-											})
-										)
-									end
-
-									-- Create the tag buffer
-									note.tags.bufnr = vim.api.nvim_create_buf(true, true)
+									local note = create_note(
+										deck_selection[1],
+										note_selection.value.modelName,
+										sorted_fields,
+										note_selection.value.noteId
+									)
 
 									-- Set the content of the tags buffers
 									vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
