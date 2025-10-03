@@ -1,3 +1,4 @@
+local config = require("anki.config")
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local actions = require("telescope.actions")
@@ -101,8 +102,8 @@ M.search_for_note = function(bufnr)
 end
 
 M.delete_note_buffers = function(note)
-	if vim.g.anki_custom_delete then
-		vim.g.anki_custom_delete(note)
+	if config.options.custom_delete then
+		config.options.custom_delete(note)
 	else
 		-- Close tags buffer
 		vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
@@ -117,7 +118,7 @@ end
 M.display_note = function(note, display)
 	anki_state.counter = anki_state.counter + 1
 	if display == "custom" then
-		vim.g.anki_custom_display(note)
+		config.options.custom_display(note)
 	else
 		local counter = anki_state.counter
 		vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://Tags_" .. counter)
@@ -131,16 +132,16 @@ M.display_note = function(note, display)
 		end
 
 		vim.api.nvim_command("edit " .. "anki://Tags_" .. counter)
-		if vim.g.anki_after_edit_buffer_hook then
-			vim.g.anki_after_edit_buffer_hook()
+		if config.options.after_edit_buffer_hook then
+			config.options.after_edit_buffer_hook()
 		end
 
 		for i = table_length(note.fields), 1, -1 do
 			vim.api.nvim_set_option_value("filetype", "html", { buf = note.fields[i].bufnr })
 			vim.api.nvim_buf_set_name(note.fields[i].bufnr, "anki://" .. note.fields[i].name .. "_" .. counter)
 			vim.api.nvim_command("edit " .. "anki://" .. note.fields[i].name .. "_" .. counter)
-			if vim.g.anki_after_edit_buffer_hook then
-				vim.g.anki_after_edit_buffer_hook()
+			if config.options.after_edit_buffer_hook then
+				config.options.after_edit_buffer_hook()
 			end
 		end
 	end
@@ -413,20 +414,20 @@ M.send_note = function(bufnr, kill)
 
 		note_to_send.id = result_note_id
 
-		if vim.g.anki_gui_browse_enabled then
+		if config.options.gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
 			local _ = safe_call(ankiconnect.gui_browse, query)
 		end
 	else
 		-- -- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
-		if vim.g.anki_gui_browse_enabled then
+		if config.options.gui_browse_enabled then
 			local query = "nid:1"
 			local _ = safe_call(ankiconnect.gui_browse, query)
 		end
 
 		local _ = safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
 
-		if vim.g.anki_gui_browse_enabled then
+		if config.options.gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
 			local _ = safe_call(ankiconnect.gui_browse, query)
 		end
@@ -563,7 +564,7 @@ M.delete_note = function(bufnr)
 
 	local _ = safe_call(ankiconnect.delete_notes, { note_to_delete.id })
 
-	if vim.g.anki_gui_browse_enabled then
+	if config.options.gui_browse_enabled then
 		local query = string.format('"deck:%s"', note_to_delete.deck_name)
 		local _ = safe_call(ankiconnect.gui_browse, query)
 	end
@@ -637,7 +638,7 @@ M.pick_delete_notes = function(opts)
 										end
 									end
 
-									if vim.g.anki_gui_browse_enabled then
+									if config.options.gui_browse_enabled then
 										local query = string.format('"deck:%s"', deck_selection[1])
 										local _ = safe_call(ankiconnect.gui_browse, query)
 										vim.notify("Anki Gui Browsed to deck " .. deck_selection[1])
@@ -708,7 +709,7 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 						end
 					end
 
-					if vim.g.anki_gui_browse_enabled then
+					if config.options.gui_browse_enabled then
 						local query = string.format('"deck:%s"', anki_state.quickdeck)
 						local _ = safe_call(ankiconnect.gui_browse, query)
 						vim.notify("Anki Gui Browsed to deck " .. anki_state.quickdeck)
@@ -736,15 +737,15 @@ M.infos = function()
 	-- Add the text content
 	local content = {
 		"--- Configuration",
-		"anki_url\t\t\t\t\t\t\t\t\t\t" .. vim.g.anki_url,
-		"anki_timeout\t\t\t\t\t\t\t\t" .. vim.g.anki_timeout,
-		"anki_prefix\t\t\t\t\t\t\t\t\t" .. vim.g.anki_prefix,
-		"anki_default_mappings\t\t\t\t" .. tostring(vim.g.anki_default_mappings),
-		"anki_quickdeck\t\t\t\t\t\t\t" .. vim.g.anki_quickdeck,
-		"anki_gui_browse_enabled \t\t" .. tostring(vim.g.anki_gui_browse_enabled),
-		"anki_custom_display\t\t\t\t\t" .. (vim.g.anki_custom_display and tostring(true) or tostring(false)),
-		"anki_custom_delete\t\t\t\t\t" .. (vim.g.anki_custom_delete and tostring(true) or tostring(false)),
-		"anki_after_edit_buffer_hook\t" .. (vim.g.anki_after_edit_buffer_hook and tostring(true) or tostring(false)),
+		"anki_url\t\t\t\t\t\t\t\t\t\t" .. config.options.url,
+		"anki_timeout\t\t\t\t\t\t\t\t" .. config.options.timeout,
+		"anki_prefix\t\t\t\t\t\t\t\t\t" .. config.options.prefix,
+		"anki_default_mappings\t\t\t\t" .. tostring(config.options.default_mappings),
+		"anki_quickdeck\t\t\t\t\t\t\t" .. config.options.quickdeck,
+		"anki_gui_browse_enabled \t\t" .. tostring(config.options.gui_browse_enabled),
+		"anki_custom_display\t\t\t\t\t" .. (config.options.custom_display and tostring(true) or tostring(false)),
+		"anki_custom_delete\t\t\t\t\t" .. (config.options.custom_delete and tostring(true) or tostring(false)),
+		"anki_after_edit_buffer_hook\t" .. (config.options.after_edit_buffer_hook and tostring(true) or tostring(false)),
 		"",
 		"--- State",
 		"quickdeck \t\t\t\t\t\t\t\t\t" .. anki_state.quickdeck,

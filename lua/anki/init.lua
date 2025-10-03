@@ -1,325 +1,180 @@
--- Setup variables
-vim.g.anki_url = vim.g.anki_url or "http://localhost:8765"
-vim.g.anki_timeout = vim.g.anki_timeout or 500
-vim.g.anki_prefix = vim.g.anki_prefix or "<leader>a"
-vim.g.anki_default_mappings = vim.g.anki_default_mappings or true
-vim.g.anki_quickdeck = vim.g.anki_quickdeck or "TestDeck"
-vim.g.anki_gui_browse_enabled = vim.g.anki_gui_browse_enabled or true
+local config = require("anki.config")
+local api = require("anki.api")
 
-vim.g.anki_custom_display = vim.g.anki_custom_display or nil
-vim.g.anki_custom_delete = vim.g.anki_custom_delete or nil
-vim.g.anki_after_edit_buffer_hook = vim.g.anki_after_edit_buffer_hook or nil
+local M = {}
 
--- Setup mappings
-if vim.g.anki_default_mappings then
-	if pcall(require, "which-key") then
-		require("which-key").add({
-			mode = { "n" },
-			nowait = true,
-			remap = false,
-			{ vim.g.anki_prefix .. "a", group = "[ANKI] QuickDeck Add Note" },
-			{ vim.g.anki_prefix .. "ab",function() require("anki.api").add_note_to_quick_deck() end, desc = "QuickDeck Add Note" },
-			{ vim.g.anki_prefix .. "as",function() require("anki.api").add_note_to_quick_deck({ display = "split" }) end, desc = "QuickDeck Add Note Split" },
-			{ vim.g.anki_prefix .. "av",function() require("anki.api").add_note_to_quick_deck({ display = "vsplit" }) end, desc = "QuickDeck Add Note Vsplit" },
-			{ vim.g.anki_prefix .. "at",function() require("anki.api").add_note_to_quick_deck({ display = "tabpage" }) end, desc = "QuickDeck Add Note Tabpage" },
-      (function()
-        if vim.g.anki_custom_display then
-          return { vim.g.anki_prefix .. "ac",function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end, desc = "QuickDeck Add Note Custom" }
-        else
-          return nil
-        end
-      end)(),
-
-			{ vim.g.anki_prefix .. "e", group = "[ANKI] QuickDeck Edit Note" },
-			{ vim.g.anki_prefix .. "eb",function() require("anki.api").edit_note_from_quick_deck() end, desc = "QuickDeck Edit Note" },
-			{ vim.g.anki_prefix .. "es",function() require("anki.api").edit_note_from_quick_deck({ display = "split" }) end, desc = "QuickDeck Edit Note Split" },
-			{ vim.g.anki_prefix .. "ev",function() require("anki.api").edit_note_from_quick_deck({ display = "vsplit" }) end, desc = "QuickDeck Edit Note Vsplit" },
-			{ vim.g.anki_prefix .. "et",function() require("anki.api").edit_note_from_quick_deck({ display = "tabpage" }) end, desc = "QuickDeck Edit Note Tabpage" },
-      (function()
-        if vim.g.anki_custom_display then
-          return { vim.g.anki_prefix .. "ec",function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end, desc = "QuickDeck Edit Note Custom" }
-        else
-          return nil
-        end
-      end)(),
-
-			{ vim.g.anki_prefix .. "A", group = "[ANKI] Add Note" },
-			{ vim.g.anki_prefix .. "Ab",function() require("anki.api").add_note() end, desc = "Add Note" },
-			{ vim.g.anki_prefix .. "As",function() require("anki.api").add_note({ display = "split" }) end, desc = "Add Note Split" },
-			{ vim.g.anki_prefix .. "Av",function() require("anki.api").add_note({ display = "vsplit" }) end, desc = "Add Note Vsplit" },
-			{ vim.g.anki_prefix .. "At",function() require("anki.api").add_note({ display = "tabpage" }) end, desc = "Add Note Tabpage" },
-      (function()
-        if vim.g.anki_custom_display then
-			    return { vim.g.anki_prefix .. "Ac",function() require("anki.api").add_note({ display = "custom" }) end, desc = "Add Note Custom" }
-        else
-          return nil
-        end
-      end)(),
-
-			{ vim.g.anki_prefix .. "E", group = "[ANKI] Edit Note" },
-			{ vim.g.anki_prefix .. "Eb",function() require("anki.api").edit_note() end, desc = "Edit Note" },
-			{ vim.g.anki_prefix .. "Es",function() require("anki.api").edit_note({ display = "split" }) end, desc = "Edit Note Split" },
-			{ vim.g.anki_prefix .. "Ev",function() require("anki.api").edit_note({ display = "vsplit" }) end, desc = "Edit Note Vsplit" },
-			{ vim.g.anki_prefix .. "Et",function() require("anki.api").edit_note({ display = "tabpage" }) end, desc = "Edit Note Tabpage" },
-      (function()
-        if vim.g.anki_custom_display then
-			    return { vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, desc = "Edit Note Custom" }
-        else
-          return nil
-        end
-      end)(),
-
-			{ vim.g.anki_prefix .. "d",function() require("anki.api").pick_notes_to_delete_from_quick_deck() end, desc = "QuickDeck Delete Notes" },
-			{ vim.g.anki_prefix .. "D",function() require("anki.api").pick_delete_notes() end, desc = "Delete Notes" },
-
-			{ vim.g.anki_prefix .. "f",function() require("anki.api").select_state_quickdeck() end, desc = "Select QuickDeck" },
-			{ vim.g.anki_prefix .. "i",function() require("anki.api").infos() end, desc = "Infos" },
-			{ vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, desc = "Deck Create" },
-
-			{ vim.g.anki_prefix .. "k",function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end, desc = "Kill Current Note" },
-			{ vim.g.anki_prefix .. "K",function() require("anki.api").kill_all() end, desc = "Kill All Notes" },
-			{ vim.g.anki_prefix .. "w",function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end, desc = "Send Current Note" },
-			{ vim.g.anki_prefix .. "p",function() require("anki.api").pull_note(vim.api.nvim_get_current_buf()) end, desc = "Pull Current Note" },
-			{ vim.g.anki_prefix .. "r",function() require("anki.api").delete_note(vim.api.nvim_get_current_buf()) end, desc = "Delete Current Note" },
-
-			{ vim.g.anki_prefix .. "b", group = "[ANKI] GUI Browse" },
-			{ vim.g.anki_prefix .. "bf",function() require("anki.api").gui_deck() end, desc = "GUI Browse To QuickDeck" },
-			{ vim.g.anki_prefix .. "bd",function() require("anki.api").gui_deck_current(vim.api.nvim_get_current_buf()) end,desc = "GUI Browse To Current Note Deck"},
-			{ vim.g.anki_prefix .. "bn",function() require("anki.api").gui_note(vim.api.nvim_get_current_buf()) end, desc = "GUI Browse To Current Note" },
-			{ vim.g.anki_prefix, group = "[ANKI]" },
-		})
-  else
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "ab",function() require("anki.api").add_note_to_quick_deck() end, {desc = "QuickDeck Add Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "as",function() require("anki.api").add_note_to_quick_deck({ display = "split" }) end, {desc = "QuickDeck Add Note Split" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "av",function() require("anki.api").add_note_to_quick_deck({ display = "vsplit" }) end, {desc = "QuickDeck Add Note Vsplit" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "at",function() require("anki.api").add_note_to_quick_deck({ display = "tabpage" }) end, {desc = "QuickDeck Add Note Tabpage" })
-      if vim.g.anki_custom_display then
-			  vim.keymap.set({"n"}, vim.g.anki_prefix .. "ac",function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end, {desc = "QuickDeck Add Note Custom" })
-      end
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "eb",function() require("anki.api").edit_note_from_quick_deck() end, {desc = "QuickDeck Edit Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "es",function() require("anki.api").edit_note_from_quick_deck({ display = "split" }) end, {desc = "QuickDeck Edit Note Split" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "ev",function() require("anki.api").edit_note_from_quick_deck({ display = "vsplit" }) end, {desc = "QuickDeck Edit Note Vsplit" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "et",function() require("anki.api").edit_note_from_quick_deck({ display = "tabpage" }) end, {desc = "QuickDeck Edit Note Tabpage" })
-      if vim.g.anki_custom_display then
-        vim.keymap.set({"n"}, vim.g.anki_prefix .. "ec",function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end, {desc = "QuickDeck Edit Note Custom" })
-      end
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ab",function() require("anki.api").add_note() end, {desc = "Add Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "As",function() require("anki.api").add_note({ display = "split" }) end, {desc = "Add Note Split" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Av",function() require("anki.api").add_note({ display = "vsplit" }) end, {desc = "Add Note Vsplit" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "At",function() require("anki.api").add_note({ display = "tabpage" }) end, {desc = "Add Note Tabpage" })
-      if vim.g.anki_custom_display then
-        vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ac",function() require("anki.api").add_note({ display = "custom" }) end, {desc = "Add Note Custom" })
-      end
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Eb",function() require("anki.api").edit_note() end, {desc = "Edit Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Es",function() require("anki.api").edit_note({ display = "split" }) end, {desc = "Edit Note Split" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ev",function() require("anki.api").edit_note({ display = "vsplit" }) end, {desc = "Edit Note Vsplit" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "Et",function() require("anki.api").edit_note({ display = "tabpage" }) end, {desc = "Edit Note Tabpage" })
-      if vim.g.anki_custom_display then
-        vim.keymap.set({"n"}, vim.g.anki_prefix .. "Ec",function() require("anki.api").edit_note({ display = "custom" }) end, {desc = "Edit Note Custom" })
-      end
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, {desc = "Deck Create" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "d",function() require("anki.api").pick_notes_to_delete_from_quick_deck() end, {desc = "QuickDeck Delete Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "D",function() require("anki.api").pick_delete_notes() end, {desc = "Delete Note" })
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "f",function() require("anki.api").select_state_quickdeck() end, {desc = "Select QuickDeck" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "i",function() require("anki.api").infos() end, {desc = "Infos" })
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "k",function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end, {desc = "Kill Current Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "K",function() require("anki.api").kill_all() end, {desc = "Kill All Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "w",function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end, {desc = "Send Current Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "p",function() require("anki.api").pull_note(vim.api.nvim_get_current_buf()) end, {desc = "Pull Current Note" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "r",function() require("anki.api").delete_note(vim.api.nvim_get_current_buf()) end, {desc = "Delete Current Note" })
-
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "bf",function() require("anki.api").gui_deck() end, {desc = "GUI Browse To QuickDeck" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "bd",function() require("anki.api").gui_deck_current(vim.api.nvim_get_current_buf()) end,{desc = "GUI Browse To Current Note Deck" })
-			vim.keymap.set({"n"}, vim.g.anki_prefix .. "bn",function() require("anki.api").gui_note(vim.api.nvim_get_current_buf()) end, {desc = "GUI Browse To Current Note" })
-	end
+local function set_keymap(mode, lhs, rhs, desc)
+  vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = "[Anki] " .. desc })
 end
 
--- Setup commands
-
-if vim.g.anki_create_user_commands then
-
-  vim.api.nvim_create_user_command("AnkiQuickDeckAddNote", function() require("anki.api").add_note_to_quick_deck() end,
-  { desc = "[Anki] Create A Note On The QuickDeck In The Current Buffer",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteSplit", function() require("anki.api").add_note_to_quick_deck({ display = "split" }) end,
-  {
-    desc = "[Anki] Create A Note On The QuickDeck In A New Split",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteVsplit", function() require("anki.api").add_note_to_quick_deck({ display = "vsplit" }) end,
-  {
-    desc = "[Anki] Create A Note On The QuickDeck In A New Vsplit",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteTabpage", function() require("anki.api").add_note_to_quick_deck({ display = "tabpage" }) end,
-  {
-    desc = "[Anki] Create A Note On The QuickDeck In A New Tabpage",
-    nargs = 0,
-  })
-
-  if vim.g.anki_custom_display then
-    vim.api.nvim_create_user_command("AnkiQuickDeckAddNoteCustom", function() require("anki.api").add_note_to_quick_deck({ display = "custom" }) end,
-    {
-      desc = "[Anki] Create A Note On The QuickDeck Using The Custom Method",
-      nargs = 0,
-    })
+---Sets up the default keymaps if enabled in the config.
+local function setup_mappings()
+  if not config.options.default_mappings then
+    return
   end
 
-  vim.api.nvim_create_user_command("AnkiQuickDeckEditNote", function() require("anki.api").edit_note_from_quick_deck() end,
-  {
-    desc = "[Anki] Edit A Note On The QuickDeck In The Current Window",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteSplit", function() require("anki.api").edit_note_from_quick_deck({ display = "split" }) end,
-  {
-    desc = "[Anki] Edit A Note On The QuickDeck In A New Split",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteVsplit", function() require("anki.api").edit_note_from_quick_deck({ display = "vsplit" }) end,
-  {
-    desc = "[Anki] Edit A Note On The QuickDeck In A New Vsplit",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteTabpage", function() require("anki.api").edit_note_from_quick_deck({ display = "tabpage" }) end,
-  {
-    desc = "[Anki] Edit A Note On The QuickDeck In A New Tabpage",
-    nargs = 0,
-  })
-  if vim.g.anki_custom_display then
-    vim.api.nvim_create_user_command("AnkiQuickDeckEditNoteCustom", function() require("anki.api").edit_note_from_quick_deck({ display = "custom" }) end,
-    {
-      desc = "[Anki] Edit A Note On The QuickDeck Using The Custom Method",
-      nargs = 0,
-    })
+  local prefix = config.options.prefix
+  local which_key_ok, which_key = pcall(require, "which-key")
+
+  -- A table to define our mappings. This avoids tons of repetition!
+  local mappings = {
+    -- QuickDeck Add Note
+    { "a", "QuickDeck Add Note", {
+      { "b", function() api.add_note_to_quick_deck() end, "Buffer" },
+      { "s", function() api.add_note_to_quick_deck({ display = "split" }) end, "Split" },
+      { "v", function() api.add_note_to_quick_deck({ display = "vsplit" }) end, "VSplit" },
+      { "t", function() api.add_note_to_quick_deck({ display = "tabpage" }) end, "Tabpage" },
+      { "c", function() api.add_note_to_quick_deck({ display = "custom" }) end, "Custom", config.options.custom_display },
+    }},
+    -- QuickDeck Edit Note
+    { "e", "QuickDeck Edit Note", {
+      { "b", function() api.edit_note_from_quick_deck() end, "Buffer" },
+      { "s", function() api.edit_note_from_quick_deck({ display = "split" }) end, "Split" },
+      { "v", function() api.edit_note_from_quick_deck({ display = "vsplit" }) end, "VSplit" },
+      { "t", function() api.edit_note_from_quick_deck({ display = "tabpage" }) end, "Tabpage" },
+      { "c", function() api.edit_note_from_quick_deck({ display = "custom" }) end, "Custom", config.options.custom_display },
+    }},
+    -- Add Note
+    { "A", "Add Note", {
+      { "b", function() api.add_note() end, "Buffer" },
+      { "s", function() api.add_note({ display = "split" }) end, "Split" },
+      { "v", function() api.add_note({ display = "vsplit" }) end, "VSplit" },
+      { "t", function() api.add_note({ display = "tabpage" }) end, "Tabpage" },
+      { "c", function() api.add_note({ display = "custom" }) end, "Custom", config.options.custom_display },
+    }},
+    -- Edit Note
+    { "E", "Edit Note", {
+      { "b", function() api.edit_note() end, "Buffer" },
+      { "s", function() api.edit_note({ display = "split" }) end, "Split" },
+      { "v", function() api.edit_note({ display = "vsplit" }) end, "VSplit" },
+      { "t", function() api.edit_note({ display = "tabpage" }) end, "Tabpage" },
+      { "c", function() api.edit_note({ display = "custom" }) end, "Custom", config.options.custom_display },
+    }},
+    -- GUI Browse
+    { "b", "GUI Browse", {
+      { "f", function() api.gui_deck() end, "To QuickDeck" },
+      { "d", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "To Current Note Deck" },
+      { "n", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "To Current Note" },
+    }},
+  }
+
+  -- Single mappings
+  local single_mappings = {
+    { "d", function() api.pick_notes_to_delete_from_quick_deck() end, "QuickDeck Delete Notes" },
+    { "D", function() api.pick_delete_notes() end, "Delete Notes" },
+    { "f", function() api.select_state_quickdeck() end, "Select QuickDeck" },
+    { "i", function() api.infos() end, "Infos" },
+    { "c", function() api.add_deck() end, "Deck Create" },
+    { "k", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill Current Note" },
+    { "K", function() api.kill_all() end, "Kill All Notes" },
+    { "w", function() api.send_note(vim.api.nvim_get_current_buf()) end, "Send Current Note" },
+    { "p", function() api.pull_note(vim.api.nvim_get_current_buf()) end, "Pull Current Note" },
+    { "r", function() api.delete_note(vim.api.nvim_get_current_buf()) end, "Delete Current Note" },
+  }
+
+  if which_key_ok then
+    local wk_maps = { mode = { "n" }, { prefix, group = "[ANKI]" } }
+    for _, group in ipairs(mappings) do
+      local group_key, group_desc, sub_mappings = unpack(group)
+      table.insert(wk_maps, { prefix .. group_key, group = "[ANKI] " .. group_desc })
+      for _, map in ipairs(sub_mappings) do
+        local key, rhs, desc, condition = unpack(map)
+        if condition == nil or condition then -- Check if the mapping should be created
+          table.insert(wk_maps, { prefix .. group_key .. key, rhs, desc = desc })
+        end
+      end
+    end
+    for _, map in ipairs(single_mappings) do
+      local key, rhs, desc = unpack(map)
+      table.insert(wk_maps, { prefix .. key, rhs, desc = desc })
+    end
+    which_key.add(wk_maps)
+  else -- Fallback to standard vim.keymap.set
+    for _, group in ipairs(mappings) do
+      local group_key, _, sub_mappings = unpack(group)
+      for _, map in ipairs(sub_mappings) do
+        local key, rhs, desc, condition = unpack(map)
+        if condition == nil or condition then
+          set_keymap("n", prefix .. group_key .. key, rhs, desc)
+        end
+      end
+    end
+    for _, map in ipairs(single_mappings) do
+      local key, rhs, desc = unpack(map)
+      set_keymap("n", prefix .. key, rhs, desc)
+    end
+  end
+end
+
+---Sets up user commands if enabled.
+local function setup_commands()
+  if not config.options.create_user_commands then
+    return
   end
 
-  vim.api.nvim_create_user_command("AnkiDeckCreate", function() require("anki.api").add_deck() end,
-  {
-    desc = "[Anki] Create a deck",
-    nargs = 0,
-  })
+  local commands = {
+    { "AnkiQuickDeckAddNote", function() api.add_note_to_quick_deck() end, "Create a note on the QuickDeck" },
+    { "AnkiQuickDeckEditNote", function() api.edit_note_from_quick_deck() end, "Edit a note on the QuickDeck" },
+    { "AnkiAddNote", function() api.add_note() end, "Create a note" },
+    { "AnkiEditNote", function() api.edit_note() end, "Edit a note" },
+  }
 
-  vim.api.nvim_create_user_command("AnkiQuickDeckDeleteNote", function() require("anki.api").pick_notes_to_delete_from_quick_deck() end,
-  {
-    desc = "[Anki] Delete A Note On The QuickDeck",
-    nargs = 0,
-  })
+  local single_commands = {
+    { "AnkiDeckCreate", function() api.add_deck() end, "Create a deck" },
+    { "AnkiQuickDeckDeleteNote", function() api.pick_notes_to_delete_from_quick_deck() end, "Delete a note on the QuickDeck" },
+    { "AnkiDeleteNote", function() api.pick_delete_notes() end, "Delete a note" },
+    { "AnkiSelectQuickDeck", function() api.select_state_quickdeck() end, "Select the QuickDeck"},
+    { "AnkiInfos", function() api.infos() end, "Infos"},
+    { "AnkiKillNote", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill note buffers"},
+    { "AnkiKillAll", function() api.kill_all() end, "Kill all the notes buffers"},
+    { "AnkiCurrentSendNote", function() api.send_note(vim.api.nvim_get_current_buf()) end, "Send the note of to anki"},
+    { "AnkiCurrentPullNote", function() api.pull_note(vim.api.nvim_get_current_buf()) end, "Pull the note from anki"},
+    { "AnkiCurrentDeleteNote", function() api.delete_note(vim.api.nvim_get_current_buf()) end, "Delete the note from anki"},
+    { "AnkiGUIBrowseToQuickDeck", function() api.gui_deck() end, "Go to the QuickDeck in the GUI"},
+    { "AnkiGUIBrowseCurrentDeck", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "Go to the deck of the current note in the GUI"},
+    { "AnkiGUIBrowseCurrentNote", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "Go to the current note in the GUI"},
+  }
 
-  vim.api.nvim_create_user_command("AnkiAddNote", function() require("anki.api").add_note() end,
-  {
-    desc = "[Anki] Create A Note In The Current Window",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiAddNoteSplit", function() require("anki.api").add_note({ display = "split" }) end,
-  {
-    desc = "[Anki] Create A Note In A New Split",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiAddNoteVsplit", function() require("anki.api").add_note({ display = "vsplit" }) end,
-  {
-    desc = "[Anki] Create A Note In A New Vsplit",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiAddNoteTabpage", function() require("anki.api").add_note({ display = "tabpage" }) end,
-  {
-    desc = "[Anki] Create A Note In A New Tabapge",
-    nargs = 0,
-  })
-  if vim.g.anki_custom_display then
-    vim.api.nvim_create_user_command("AnkiAddNoteCustom", function() require("anki.api").add_note({ display = "custom" }) end,
-    {
-      desc = "[Anki] Create A Note Using The Custom Method",
-      nargs = 0,
-    })
+  -- Loop to create commands with display options
+  for _, cmd_def in ipairs(commands) do
+    local name, func, desc = unpack(cmd_def)
+    local displays = {
+      { "", "", "in the current window" },
+      { "Split", { display = "split" }, "in a new split" },
+      { "Vsplit", { display = "vsplit" }, "in a new vsplit" },
+      { "Tabpage", { display = "tabpage" }, "in a new tabpage" },
+    }
+    -- Conditionally add the custom display
+    if config.options.custom_display then
+      table.insert(displays, { "Custom", { display = "custom" }, "using the custom method" })
+    end
+
+    for _, display_info in ipairs(displays) do
+      local suffix, args, desc_suffix = unpack(display_info)
+      vim.api.nvim_create_user_command(name .. suffix, function() func(args) end, {
+        desc = "[Anki] " .. desc .. " " .. desc_suffix,
+        nargs = 0,
+      })
+    end
   end
-  vim.api.nvim_create_user_command("AnkiEditNote", function() require("anki.api").edit_note() end,
-  {
-    desc = "[Anki] Edit A Note In The Current Window",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiEditNoteSplit", function() require("anki.api").edit_note({ display = "split" }) end,
-  {
-    desc = "[Anki] Edit A Note In A New Split",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiEditNoteVsplit", function() require("anki.api").edit_note({ display = "vsplit" }) end,
-  {
-    desc = "[Anki] Edit A Note In A New Vsplit",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiEditNoteTabpage", function() require("anki.api").edit_note({ display = "tabpage" }) end,
-  {
-    desc = "[Anki] Edit A Note In A New Tabapge",
-    nargs = 0,
-  })
-  if vim.g.anki_custom_display then
-    vim.api.nvim_create_user_command("AnkiEditNoteCustom", function() require("anki.api").edit_note({ display = "custom" }) end,
-    {
-      desc = "[Anki] Edit A Note Using The Custom Method",
-      nargs = 0,
-    })
+  
+  -- Create all other simple commands
+  for _, cmd_def in ipairs(single_commands) do
+    local name, func, desc = unpack(cmd_def)
+    vim.api.nvim_create_user_command(name, func, { desc = "[Anki] " .. desc, nargs = 0 })
   end
-  vim.api.nvim_create_user_command("AnkiDeleteNote", function() require("anki.api").pick_delete_notes() end,
-  {
-    desc = "[Anki] Delete A Note",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiSelectQuickDeck", function() require("anki.api").select_state_quickdeck() end,
-  {
-    desc = "[Anki] Select The Deck",
-    nargs = 0,
-  })
+end
 
-  vim.api.nvim_create_user_command("AnkiInfos", function() require("anki.api").infos() end,
-  {
-    desc = "[Anki] Infos",
-  })
 
-  vim.api.nvim_create_user_command("AnkiKillNote", function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end,
-  {
-    desc = "[Anki] Kill The Current Buffer Note Buffers",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiKillAll", function() require("anki.api").kill_all()end, {
-    desc = "[Anki] Kill all the notes buffers.",
-    nargs = 0,
-  })
+---@param opts table? User configuration options.
+function M.setup(opts)
+  config.setup(opts)
+  setup_mappings()
+  setup_commands()
 
-  vim.api.nvim_create_user_command("AnkiCurrentSendNote", function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end,
-  {
-    desc = "[Anki] Send The Note Of The Current Buffer To Anki",
-    nargs = 0,
-  })
-  vim.api.nvim_create_user_command("AnkiCurrentPullNote", function() require("anki.api").pull_note(vim.api.nvim_get_current_buf()) end,
-  {
-    desc = "[Anki] Pull The Current Buffer Note From Anki",
-  })
-  vim.api.nvim_create_user_command("AnkiCurrentDeleteNote", function() require("anki.api").delete_note(vim.api.nvim_get_current_buf()) end,
-  {
-    desc = "[Anki] Delete The Current Buffer Note From Anki",
-  })
-
-  vim.api.nvim_create_user_command("AnkiGUIBrowseToQuickDeck", function() require("anki.api").gui_deck() end,
-  {
-    desc = "[Anki] GUI Browse QuickDeck",
-  })
-
-  vim.api.nvim_create_user_command("AnkiGUIBrowseCurrentDeck", function() require("anki.api").gui_deck_current(vim.api.nvim_get_current_buf()) end,  
-  {
-    desc = "[Anki] GUI Browse Current Note Deck",
-  })
-
-  vim.api.nvim_create_user_command("AnkiGUIBrowseCurrentNote", function() require("anki.api").gui_note(vim.api.nvim_get_current_buf()) end,
-  {
-    desc = "[Anki] GUI Browse Current Note",
-  })
+  -- setup default quickdeck in state
+  require("anki.state").quickdeck = config.options.quickdeck
 
 end
 
+return M

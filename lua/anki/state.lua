@@ -1,10 +1,8 @@
-local M = {}
-
-M.counter = 0
-
-M.quickdeck = vim.g.anki_quickdeck
-
--- @type Note[]
-M.notes = {}
+local M = {
+	counter = 0,
+	-- @type Note[]
+	notes = {},
+	quickdeck = nil
+}
 
 return M

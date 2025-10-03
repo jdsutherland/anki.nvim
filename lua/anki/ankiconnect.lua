@@ -1,3 +1,4 @@
+local config = require("anki.config")
 local http_request = require("http.request")
 local http_headers = require("http.headers")
 
@@ -21,8 +22,6 @@ local anki_connect_invoke = function(options)
 		error("Expected a table or nil as params")
 	end
 
-	local url = vim.g.anki_url
-
 	local data = {
 		action = action,
 		version = version,
@@ -39,11 +38,11 @@ local anki_connect_invoke = function(options)
 	headers:upsert("content-type", "application/json")
 	headers:upsert("content-length", tostring(#post_data))
 
-	local request = http_request.new_from_uri(url)
+	local request = http_request.new_from_uri(config.options.url)
 	request.headers = headers
 	request:set_body(post_data)
 
-	local headers_, stream = request:go(vim.g.anki_timeout)
+	local headers_, stream = request:go(config.options.timeout)
 	if not headers_ then
 		vim.notify(vim.inspect(headers_))
 		error("Failed to send request")
