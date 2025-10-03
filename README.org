@@ -66,7 +66,8 @@ You can customize the plugin by passing a table to the =setup()= function. Here 
 ** Keymaps
 The plugin provides a set of default keymaps, which you can enable or disable with the =default_mappings= option. The default prefix is =<leader>a=.
 
-Many actions are organized into *groups* identified by a letter (e.g., =a= for **A**dd, =e= for **E**dit). These groups are then followed by a second letter that specifies *how* to display the note editor:
+Many actions are organized into *groups* identified by a letter (e.g., =a= for **A**dd, =e= for **E**dit).
+These groups are then followed by a second letter that specifies *how* to display the note buffers :
 
 - =b=: open in the current window (**b**uffer)
 - =s=: open in a horizontal **s**plit
@@ -74,12 +75,12 @@ Many actions are organized into *groups* identified by a letter (e.g., =a= for *
 - =t=: open in a new **t**ab page
 - =c=: open using the **c**ustom display function
 
-***Note Management Groups***
+*** Note Management Groups
 
-These groups are for adding, editing, or deleting notes. For example, to add a note to the QuickDeck and open the editor in a new vertical split, you would use =<prefix>av=.
+These groups are for adding, editing, or deleting notes.
+For example, to add a note to the QuickDeck and open the buffers in a new vertical split, you would use =<prefix>av=.
 
 | Group       | Description                                    |
-| ----------- | ---------------------------------------------- |
 | =<prefix>a= | **A**dd a note to the QuickDeck.               |
 | =<prefix>A= | **A**dd a note (prompts to choose a deck).     |
 | =<prefix>e= | **E**dit a note from the QuickDeck.            |
@@ -87,27 +88,25 @@ These groups are for adding, editing, or deleting notes. For example, to add a n
 | =<prefix>d= | **D**elete a note from the QuickDeck.          |
 | =<prefix>D= | **D**elete a note (prompts to choose a deck).  |
 
-***GUI Browsing Group***
+*** GUI Browsing Group
 
 The =<prefix>b= group is for opening the Anki GUI to a specific location.
 
-| Keymap      | Description                               |
-| ----------- | ----------------------------------------- |
-| =<prefix>bq= | **B**rowse to the **Q**uickDeck.          |
-| =<prefix>bd= | **B**rowse to the current note's **D**eck.|
-| =<prefix>bn= | **B**rowse to the current **N**ote.       |
+| Keymap       | Description                                |
+| =<prefix>bq= | **B**rowse to the **Q**uickDeck.           |
+| =<prefix>bd= | **B**rowse to the current note's **D**eck. |
+| =<prefix>bn= | **B**rowse to the current **N**ote.        |
 
 ***Other Keymaps***
 
-| Keymap      | Description                               |
-| ----------- | ----------------------------------------- |
-| =<prefix>q= | Select the **Q**uickDeck.                 |
-| =<prefix>i= | Show **i**nformation about the plugin.    |
-| =<prefix>c= | **C**reate a new deck.                    |
-| =<prefix>w= | **W**rite (send) the current note to Anki.|
-| =<prefix>p= | **P**ull the current note from Anki.      |
-| =<prefix>k= | **K**ill the current note's buffers.      |
-| =<prefix>K= | **K**ill all note buffers.                |
+| Keymap      | Description                                     |
+| =<prefix>q= | Select the **Q**uickDeck.                       |
+| =<prefix>i= | Show **i**nformation about the plugin.          |
+| =<prefix>c= | **C**reate a new deck.                          |
+| =<prefix>w= | **W**rite (send) the current note to Anki.      |
+| =<prefix>p= | **P**ull the current note from Anki.            |
+| =<prefix>k= | **K**ill the current note's buffers.            |
+| =<prefix>K= | **K**ill all note buffers.                      |
 | =<prefix>r= | **R**emove (delete) the current note from Anki. |
 
 
@@ -119,41 +118,40 @@ Each note field is in it's own buffer.
 The suffixes =Split=, =Vsplit=, =Tabpage=, and =Custom= correspond to opening the buffers in a horizontal split, vertical split, new tab page, or with the custom display function, respectively.
 Commands without a suffix open the buffers in the current window.
 
-| Command                           | Description                                                                       |
-| --------------------------------- | --------------------------------------------------------------------------        |
-| =AnkiQuickDeckAddNote=            | Add a note to the QuickDeck (opens buffers in the current window).                |
-| =AnkiQuickDeckAddNoteSplit=       | Add a note to the QuickDeck (opens buffers in a new horizontal split).            |
-| =AnkiQuickDeckAddNoteVsplit=      | Add a note to the QuickDeck (opens buffers in a new vertical split).              |
-| =AnkiQuickDeckAddNoteTabpage=     | Add a note to the QuickDeck (opens buffers in a new tab page).                    |
-| =AnkiQuickDeckAddNoteCustom=      | Add a note to the QuickDeck (opens buffers with `custom_display` function).       |
-| =AnkiQuickDeckEditNote=           | Edit a note from the QuickDeck (opens buffers in the current window).             |
-| =AnkiQuickDeckEditNoteSplit=      | Edit a note from the QuickDeck (opens buffers in a new horizontal split).         |
-| =AnkiQuickDeckEditNoteVsplit=     | Edit a note from the QuickDeck (opens buffers in a new vertical split).           |
-| =AnkiQuickDeckEditNoteTabpage=    | Edit a note from the QuickDeck (opens buffers in a new tab page).                 |
-| =AnkiQuickDeckEditNoteCustom=     | Edit a note from the QuickDeck (opens buffers with `custom_display` function).    |
-| =AnkiAddNote=                     | Add a note, prompting for a deck (opens buffers in the current window).           |
-| =AnkiAddNoteSplit=                | Add a note, prompting for a deck (opens buffers in a new horizontal split).       |
-| =AnkiAddNoteVsplit=               | Add a note, prompting for a deck (opens buffers in a new vertical split).         |
-| =AnkiAddNoteTabpage=              | Add a note, prompting for a deck (opens buffers in a new tab page).               |
-| =AnkiAddNoteCustom=               | Add a note, prompting for a deck (opens buffers with `custom_display` function).  |
-| =AnkiEditNote=                    | Edit a note, prompting for a deck (opens buffers in the current window).          |
-| =AnkiEditNoteSplit=               | Edit a note, prompting for a deck (opens buffers in a new horizontal split).      |
-| =AnkiEditNoteVsplit=              | Edit a note, prompting for a deck (opens buffers in a new vertical split).        |
-| =AnkiEditNoteTabpage=             | Edit a note, prompting for a deck (opens buffers in a new tab page).              |
-| =AnkiEditNoteCustom=              | Edit a note, prompting for a deck (opens buffers with `custom_display` function). |
-| =AnkiDeckCreate=                  | Create a new deck.                                                                |
-| =AnkiQuickDeckDeleteNote=         | Delete a note from the QuickDeck (prompts for selection).                         |
-| =AnkiDeleteNote=                  | Delete a note from any deck (prompts for selection).                              |
-| =AnkiSelectQuickDeck=             | Select a new deck to use as the QuickDeck.                                        |
-| =AnkiInfos=                       | Show information about the plugin.                                                |
-| =AnkiKillNote=                    | Kill the buffers for the current note.                                            |
-| =AnkiKillAll=                     | Kill all note buffers.                                                            |
-| =AnkiCurrentSendNote=             | Send (write) the current note's buffer contents to Anki.                          |
-| =AnkiCurrentPullNote=             | Pull the latest version of the current note from Anki into the buffer.            |
-| =AnkiCurrentDeleteNote=           | Delete the current note from Anki.                                                |
-| =AnkiGUIBrowseToQuickDeck=        | Open the Anki GUI and browse to the QuickDeck.                                    |
-| =AnkiGUIBrowseCurrentDeck=        | Open the Anki GUI and browse to the current note's deck.                          |
-| =AnkiGUIBrowseCurrentNote=        | Open the Anki GUI and browse to the current note.                                 |
+| Command                        | Description                                                                       |
+| =AnkiQuickDeckAddNote=         | Add a note to the QuickDeck (opens buffers in the current window).                |
+| =AnkiQuickDeckAddNoteSplit=    | Add a note to the QuickDeck (opens buffers in a new horizontal split).            |
+| =AnkiQuickDeckAddNoteVsplit=   | Add a note to the QuickDeck (opens buffers in a new vertical split).              |
+| =AnkiQuickDeckAddNoteTabpage=  | Add a note to the QuickDeck (opens buffers in a new tab page).                    |
+| =AnkiQuickDeckAddNoteCustom=   | Add a note to the QuickDeck (opens buffers with `custom_display` function).       |
+| =AnkiQuickDeckEditNote=        | Edit a note from the QuickDeck (opens buffers in the current window).             |
+| =AnkiQuickDeckEditNoteSplit=   | Edit a note from the QuickDeck (opens buffers in a new horizontal split).         |
+| =AnkiQuickDeckEditNoteVsplit=  | Edit a note from the QuickDeck (opens buffers in a new vertical split).           |
+| =AnkiQuickDeckEditNoteTabpage= | Edit a note from the QuickDeck (opens buffers in a new tab page).                 |
+| =AnkiQuickDeckEditNoteCustom=  | Edit a note from the QuickDeck (opens buffers with `custom_display` function).    |
+| =AnkiAddNote=                  | Add a note, prompting for a deck (opens buffers in the current window).           |
+| =AnkiAddNoteSplit=             | Add a note, prompting for a deck (opens buffers in a new horizontal split).       |
+| =AnkiAddNoteVsplit=            | Add a note, prompting for a deck (opens buffers in a new vertical split).         |
+| =AnkiAddNoteTabpage=           | Add a note, prompting for a deck (opens buffers in a new tab page).               |
+| =AnkiAddNoteCustom=            | Add a note, prompting for a deck (opens buffers with `custom_display` function).  |
+| =AnkiEditNote=                 | Edit a note, prompting for a deck (opens buffers in the current window).          |
+| =AnkiEditNoteSplit=            | Edit a note, prompting for a deck (opens buffers in a new horizontal split).      |
+| =AnkiEditNoteVsplit=           | Edit a note, prompting for a deck (opens buffers in a new vertical split).        |
+| =AnkiEditNoteTabpage=          | Edit a note, prompting for a deck (opens buffers in a new tab page).              |
+| =AnkiEditNoteCustom=           | Edit a note, prompting for a deck (opens buffers with `custom_display` function). |
+| =AnkiDeckCreate=               | Create a new deck.                                                                |
+| =AnkiQuickDeckDeleteNote=      | Delete a note from the QuickDeck (prompts for selection).                         |
+| =AnkiDeleteNote=               | Delete a note from any deck (prompts for selection).                              |
+| =AnkiSelectQuickDeck=          | Select a new deck to use as the QuickDeck.                                        |
+| =AnkiInfos=                    | Show information about the plugin.                                                |
+| =AnkiKillNote=                 | Kill the buffers for the current note.                                            |
+| =AnkiKillAll=                  | Kill all note buffers.                                                            |
+| =AnkiCurrentSendNote=          | Send (write) the current note's buffer contents to Anki.                          |
+| =AnkiCurrentPullNote=          | Pull the latest version of the current note from Anki into the buffer.            |
+| =AnkiCurrentDeleteNote=        | Delete the current note from Anki.                                                |
+| =AnkiGUIBrowseToQuickDeck=     | Open the Anki GUI and browse to the QuickDeck.                                    |
+| =AnkiGUIBrowseCurrentDeck=     | Open the Anki GUI and browse to the current note's deck.                          |
+| =AnkiGUIBrowseCurrentNote=     | Open the Anki GUI and browse to the current note.                                 |
 
 * TODO's
 - [ ] Fix existing bugs
