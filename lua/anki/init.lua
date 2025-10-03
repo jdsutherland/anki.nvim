@@ -77,6 +77,7 @@ if vim.g.anki_default_mappings then
 			{ vim.g.anki_prefix .. "c",function() require("anki.api").add_deck() end, desc = "Deck Create" },
 
 			{ vim.g.anki_prefix .. "k",function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end, desc = "Kill Current Note" },
+			{ vim.g.anki_prefix .. "K",function() require("anki.api").kill_all() end, desc = "Kill All Notes" },
 			{ vim.g.anki_prefix .. "w",function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end, desc = "Send Current Note" },
 			{ vim.g.anki_prefix .. "p",function() require("anki.api").pull_note(vim.api.nvim_get_current_buf()) end, desc = "Pull Current Note" },
 			{ vim.g.anki_prefix .. "r",function() require("anki.api").delete_note(vim.api.nvim_get_current_buf()) end, desc = "Delete Current Note" },
@@ -128,6 +129,7 @@ if vim.g.anki_default_mappings then
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "i",function() require("anki.api").infos() end, {desc = "Infos" })
 
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "k",function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end, {desc = "Kill Current Note" })
+			vim.keymap.set({"n"}, vim.g.anki_prefix .. "K",function() require("anki.api").kill_all() end, {desc = "Kill All Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "w",function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end, {desc = "Send Current Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "p",function() require("anki.api").pull_note(vim.api.nvim_get_current_buf()) end, {desc = "Pull Current Note" })
 			vim.keymap.set({"n"}, vim.g.anki_prefix .. "r",function() require("anki.api").delete_note(vim.api.nvim_get_current_buf()) end, {desc = "Delete Current Note" })
@@ -280,11 +282,16 @@ if vim.g.anki_create_user_commands then
     desc = "[Anki] Infos",
   })
 
-  vim.api.nvim_create_user_command("AnkiCurrentKillNote", function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end,
+  vim.api.nvim_create_user_command("AnkiKillNote", function() require("anki.api").kill_note(vim.api.nvim_get_current_buf()) end,
   {
-    desc = "[Anki] Kill The Current Buffer Note",
+    desc = "[Anki] Kill The Current Buffer Note Buffers",
     nargs = 0,
   })
+  vim.api.nvim_create_user_command("AnkiKillAll", function() require("anki.api").kill_all()end, {
+    desc = "[Anki] Kill all the notes buffers.",
+    nargs = 0,
+  })
+
   vim.api.nvim_create_user_command("AnkiCurrentSendNote", function() require("anki.api").send_note(vim.api.nvim_get_current_buf()) end,
   {
     desc = "[Anki] Send The Note Of The Current Buffer To Anki",

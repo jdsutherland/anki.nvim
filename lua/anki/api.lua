@@ -81,7 +81,7 @@ local function pick_one(prompt, results, opts, on_select, entry_maker)
 		:find()
 end
 
-M.table_length = function(tbl)
+local table_length = function(tbl)
 	local length = 0
 	for key, value in pairs(tbl) do
 		length = length + 1
@@ -137,7 +137,7 @@ M.display_note = function(note, display)
 			vim.g.anki_after_edit_buffer_hook()
 		end
 
-		for i = M.table_length(note.fields), 1, -1 do
+		for i = table_length(note.fields), 1, -1 do
 			vim.api.nvim_set_option_value("filetype", "html", { buf = note.fields[i].bufnr })
 			vim.api.nvim_buf_set_name(note.fields[i].bufnr, "anki://" .. note.fields[i].name .. "_" .. counter)
 			vim.api.nvim_command("edit " .. "anki://" .. note.fields[i].name .. "_" .. counter)
@@ -213,7 +213,7 @@ end
 M.note_entry_maker = function(entry)
 	local sorted_fields = {}
 	-- Initialize table
-	for i = 0, M.table_length(entry.fields) do
+	for i = 0, table_length(entry.fields) do
 		sorted_fields[(i + 1)] = nil
 	end
 
@@ -281,7 +281,7 @@ M.edit_note_from_quick_deck = function(arguments)
 
 					local sorted_fields = {}
 
-					for i = 0, M.table_length(note_selection.value.fields) do
+					for i = 0, table_length(note_selection.value.fields) do
 						sorted_fields[(i + 1)] = nil
 					end
 
@@ -332,6 +332,23 @@ M.kill_note = function(bufnr)
 
 	vim.notify("Note killed")
 end
+
+M.kill_all = function()
+	local notes_to_clean = vim.deepcopy(anki_state.notes)
+	if #notes_to_clean == 0 then
+		vim.notify("No active Anki notes to clean up.")
+		return
+	end
+
+	for _, note in ipairs(notes_to_clean) do
+		M.delete_note_buffers(note)
+	end
+
+	-- Clear the state table
+	anki_state.notes = {}
+	vim.notify("Cleaned up " .. #notes_to_clean .. " Anki note(s).")
+end
+
 
 M.send_note = function(bufnr, kill)
 	kill = kill or nil
@@ -457,7 +474,7 @@ M.edit_note = function(opts)
 		pick_one("notes", result_deck_notes_info, opts, function(note_selection)
 			local sorted_fields = {}
 			-- Initialize table
-			for i = 0, M.table_length(note_selection.value.fields) do
+			for i = 0, table_length(note_selection.value.fields) do
 				sorted_fields[(i + 1)] = nil
 			end
 			for key, field in pairs(note_selection.value.fields) do
