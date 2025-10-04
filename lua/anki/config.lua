@@ -8,9 +8,9 @@ M.defaults = {
 	quickdeck = "Refile",
 	gui_browse_enabled = true,
 	create_user_commands = true,
-	custom_display = nil,
-	custom_delete = nil,
-	after_edit_buffer_hook = nil,
+	custom_display = false,
+	custom_delete = false,
+	after_edit_buffer_hook = false,
 }
 
 M.options = {}

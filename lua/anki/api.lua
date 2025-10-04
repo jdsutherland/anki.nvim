@@ -10,6 +10,14 @@ local classes = require("anki.classes")
 
 local M = {}
 
+local function table_length(tbl)
+	local length = 0
+	for key, value in pairs(tbl) do
+		length = length + 1
+	end
+	return length
+end
+
 function string.split(inputstr, sep)
 	if sep == nil then
 		sep = "%s" -- default separator is whitespace
@@ -30,14 +38,18 @@ local function safe_call(fn, ...)
 	return response.result
 end
 
-local function create_note(deck_name, model_name, field_names, id)
+local function create_note(deck_name, model_name, field_names, display_mode, id)
 	local fields = {}
 
 	for _, name in pairs(field_names) do
 		table.insert(
 			fields,
 			classes.Field:new({
-				bufnr = vim.api.nvim_create_buf(true, true),
+				editor_context = classes.EditorContext:new({
+					winid = vim.api.nvim_get_current_win(),
+					tabid = vim.api.nvim_get_current_tabpage(),
+					bufnr = vim.api.nvim_create_buf(true, true),
+				}),
 				name = name,
 			})
 		)
@@ -45,13 +57,64 @@ local function create_note(deck_name, model_name, field_names, id)
 
 	local note = classes.Note:new({
 		fields = fields,
-		tags = { bufnr = vim.api.nvim_create_buf(true, true) },
+		tags = classes.EditorContext:new({
+			winid = vim.api.nvim_get_current_win(),
+			tabid = vim.api.nvim_get_current_tabpage(),
+			bufnr = vim.api.nvim_create_buf(true, true),
+		}),
 		deck_name = deck_name,
 		model_name = model_name,
 		id = id,
+		display_mode = display_mode,
 	})
 
+	table.insert(anki_state.notes, note)
+
 	return note
+end
+
+M.display_note = function(note, display)
+	anki_state.counter = anki_state.counter + 1
+	if display == "custom" and config.options.custom_display ~= nil then
+		config.options.custom_display(note)
+	else
+		if display == "tabpage" then
+			vim.cmd("tabnew")
+		elseif display == "vsplit" then
+			vim.cmd("vsplit")
+		elseif display == "split" then
+			vim.cmd("split")
+		end
+		local new_winid = vim.api.nvim_get_current_win()
+		local new_tabid = vim.api.nvim_get_current_tabpage()
+
+		note.tags.winid = new_winid
+		note.tags.tabid = new_tabid
+
+		local counter = anki_state.counter
+		vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://Tags_" .. counter)
+		vim.api.nvim_win_set_buf(0, note.tags.bufnr)
+
+		if config.options.after_edit_buffer_hook then
+			config.options.after_edit_buffer_hook()
+		end
+
+		for i = table_length(note.fields), 1, -1 do
+			vim.api.nvim_set_option_value("filetype", "html", { buf = note.fields[i].editor_context.bufnr })
+			vim.api.nvim_buf_set_name(
+				note.fields[i].editor_context.bufnr,
+				"anki://" .. note.fields[i].name .. "_" .. counter
+			)
+			vim.api.nvim_win_set_buf(0, note.fields[i].editor_context.bufnr)
+
+			note.fields[i].editor_context.winid = new_winid
+			note.fields[i].editor_context.tabid = new_tabid
+
+			if config.options.after_edit_buffer_hook then
+				config.options.after_edit_buffer_hook()
+			end
+		end
+	end
 end
 
 local function pick_one(prompt, results, opts, on_select, entry_maker)
@@ -80,21 +143,13 @@ local function pick_one(prompt, results, opts, on_select, entry_maker)
 		:find()
 end
 
-local table_length = function(tbl)
-	local length = 0
-	for key, value in pairs(tbl) do
-		length = length + 1
-	end
-	return length
-end
-
 M.search_for_note = function(bufnr)
 	for index, note in ipairs(anki_state.notes) do
 		if note.tags.bufnr == bufnr then
 			return index
 		end
 		for _, field in ipairs(note.fields) do
-			if field.bufnr == bufnr then
+			if field.editor_context.bufnr == bufnr then
 				return index
 			end
 		end
@@ -110,39 +165,7 @@ M.delete_note_buffers = function(note)
 
 		-- Close fields buffers
 		for _, field in pairs(note.fields) do
-			vim.api.nvim_buf_delete(field.bufnr, { force = true })
-		end
-	end
-end
-
-M.display_note = function(note, display)
-	anki_state.counter = anki_state.counter + 1
-	if display == "custom" then
-		config.options.custom_display(note)
-	else
-		local counter = anki_state.counter
-		vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://Tags_" .. counter)
-
-		if display == "tabpage" then
-			vim.api.nvim_command("tabnew " .. "anki://Tags_" .. counter)
-		elseif display == "vsplit" then
-			vim.api.nvim_command("vsplit " .. "anki://Tags_" .. counter)
-		elseif display == "split" then
-			vim.api.nvim_command("split " .. "anki://Tags_" .. counter)
-		end
-
-		vim.api.nvim_command("edit " .. "anki://Tags_" .. counter)
-		if config.options.after_edit_buffer_hook then
-			config.options.after_edit_buffer_hook()
-		end
-
-		for i = table_length(note.fields), 1, -1 do
-			vim.api.nvim_set_option_value("filetype", "html", { buf = note.fields[i].bufnr })
-			vim.api.nvim_buf_set_name(note.fields[i].bufnr, "anki://" .. note.fields[i].name .. "_" .. counter)
-			vim.api.nvim_command("edit " .. "anki://" .. note.fields[i].name .. "_" .. counter)
-			if config.options.after_edit_buffer_hook then
-				config.options.after_edit_buffer_hook()
-			end
+			vim.api.nvim_buf_delete(field.editor_context.bufnr, { force = true })
 		end
 	end
 end
@@ -166,8 +189,7 @@ M.add_note = function(arguments)
 			if not result_field_names then
 				return
 			end
-			local note = create_note(deck_selection[1], model_selection[1], result_field_names)
-			table.insert(anki_state.notes, note)
+			local note = create_note(deck_selection[1], model_selection[1], result_field_names, display)
 			M.display_note(note, display)
 		end)
 	end)
@@ -192,8 +214,7 @@ M.add_note_to_quick_deck = function(arguments)
 		if not result_field_names then
 			return
 		end
-		local note = create_note(anki_state.quickdeck, model_selection[1], result_field_names)
-		table.insert(anki_state.notes, note)
+		local note = create_note(anki_state.quickdeck, model_selection[1], result_field_names, display)
 		M.display_note(note, display)
 	end)
 end
@@ -300,18 +321,23 @@ M.edit_note_from_quick_deck = function(arguments)
 						anki_state.quickdeck,
 						note_selection.value.modelName,
 						fields_names,
+						display,
 						note_selection.value.noteId
 					)
 
 					-- Set the content of the tags buffers
-					vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
+					vim.api.nvim_buf_set_lines(note.tags.integer, 0, -1, false, note_selection.value.tags)
 
 					-- Set the content of the fields buffers
 					for i, v in pairs(sorted_fields) do
-						vim.api.nvim_buf_set_lines(note.fields[i].bufnr, 0, -1, false, string.split(v.value, "\n"))
+						vim.api.nvim_buf_set_lines(
+							note.fields[i].editor_context.bufnr,
+							0,
+							-1,
+							false,
+							string.split(v.value, "\n")
+						)
 					end
-
-					table.insert(anki_state.notes, note)
 
 					M.display_note(note, display)
 				end)
@@ -445,8 +471,10 @@ M.send_note = function(bufnr, kill)
 	end
 end
 
-M.edit_note = function(opts)
-	opts = opts or {}
+M.edit_note = function(arguments)
+	arguments = arguments or {}
+	local opts = arguments.opts or {}
+	local display = arguments.display or nil
 
 	local result_deck_names = safe_call(ankiconnect.deck_names)
 	if not result_deck_names then
@@ -492,16 +520,17 @@ M.edit_note = function(opts)
 				deck_selection[1],
 				note_selection.value.modelName,
 				fields_names,
+				display,
 				note_selection.value.noteId
 			)
 
 			-- Set the content of the tags buffers
-			vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
+			vim.api.nvim_buf_set_lines(note.tags.integer, 0, -1, false, note_selection.value.tags)
 
 			-- Set the content of the fields buffers
 			for i, _ in ipairs(sorted_fields) do
 				vim.api.nvim_buf_set_lines(
-					note.fields[i].bufnr,
+					note.fields[i].editor_context.bufnr,
 					0,
 					-1,
 					false,
@@ -509,9 +538,7 @@ M.edit_note = function(opts)
 				)
 			end
 
-			table.insert(anki_state.notes, note)
-
-			M.display_note(note)
+			M.display_note(note, display)
 		end, M.note_entry_maker)
 	end)
 end
@@ -539,7 +566,7 @@ M.pull_note = function(bufnr)
 		local field_found_in_note = note_to_pull:find_field_by_name(key)
 		if field_found_in_note then
 			vim.api.nvim_buf_set_lines(
-				note_to_pull.fields[field_found_in_note].bufnr,
+				note_to_pull.fields[field_found_in_note].editor_context.bufnr,
 				0,
 				-1,
 				false,

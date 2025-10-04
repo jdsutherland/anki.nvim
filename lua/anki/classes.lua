@@ -1,17 +1,42 @@
 local M = {}
 
---- @class Field
+--- @class EditorContext
 --- @field bufnr integer
+--- @field winid integer
+--- @field tabid integer
+M.EditorContext = {}
+M.EditorContext.__index = M.EditorContext
+
+--- Constructor for EditorContext class.
+--- @param o { bufnr: integer, winid: integer, tabid: integer}
+--- @return EditorContext
+function M.EditorContext:new(o)
+	o = o or {}
+	assert(o.bufnr and type(o.bufnr) == "number", "EditorContext requires a 'bufnr'")
+	assert(o.winid and type(o.winid) == "number", "EditorContext requires a 'winid'")
+	assert(o.tabid and type(o.tabid) == "number", "EditorContext requires a 'tabid'")
+
+	setmetatable(o, {
+		__index = self,
+		__tostring = function(tbl)
+			return string.format("EditorContext(bufnr=%d, winid=%d, tabid=%d)", tbl.bufnr, tbl.winid, tbl.tabid)
+		end,
+	})
+	return o
+end
+
+--- @class Field
+--- @field editor_context EditorContext
 --- @field name string
 M.Field = {}
 M.Field.__index = M.Field
 
 --- Constructor for Field class.
---- @param o { bufnr: integer, name: string } Table to initialize the object with.
+--- @param o { editor_context: EditorContext, name: string } Table to initialize the object with.
 --- @return Field
 function M.Field:new(o)
 	o = o or {}
-	assert(o.bufnr and type(o.bufnr) == "number", "Field requires a 'bufnr'")
+	assert(o.editor_context, "Field requires an 'editor_context'")
 	assert(o.name and type(o.name) == "string", "Field requires a 'name'")
 	setmetatable(o, {
 		__index = self,
@@ -25,14 +50,15 @@ end
 --- @class Note
 --- @field id integer|nil
 --- @field fields Field[]
---- @field tags { bufnr: integer }
+--- @field tags EditorContext
 --- @field deck_name string
 --- @field model_name string
+--- @field display_mode nil|"split"|"vsplit"|"tabpage"|"custom"
 M.Note = {}
 M.Note.__index = M.Note
 
 --- Constructor for Note class.
---- @param o { id?: integer, fields: Field[], tags: { bufnr: integer }, deck_name: string, model_name: string }
+--- @param o { id?: integer, fields: Field[], tags: EditorContext, deck_name: string, model_name: string, display_mode: nil|"split"|"vsplit"|"tabpage"|"custom"  }
 --- @return Note
 function M.Note:new(o)
 	o = o or {}
@@ -41,7 +67,23 @@ function M.Note:new(o)
 	assert(o.model_name, "Note requires a 'model_name'")
 	assert(type(o.model_name) == "string", "'model_name' must be a string")
 	assert(o.fields, "Note requires a 'fields' table")
-	assert(o.tags and o.tags.bufnr, "Note requires a 'tags' table with a 'bufnr'")
+	assert(
+		o.tags and getmetatable(o.tags) and getmetatable(o.tags).__index == M.EditorContext,
+		"Note requires a 'tags' of type EditorContext"
+	)
+	assert(
+		o.display_mode == nil
+			or (
+				o.display_mode
+				and (
+					o.display_mode == "split"
+					or o.display_mode == "vsplit"
+					or o.display_mode == "tabpage"
+					or o.display_mode == "custom"
+				)
+			),
+		"Note 'display_mode' must be nil or have a value of ['split', 'vsplit', 'tabpage', 'custom']"
+	)
 	setmetatable(o, {
 		__index = self,
 		__tostring = function(tbl)
@@ -81,7 +123,7 @@ function M.Note:get_content_from_buffers()
 
 	-- Get content from field buffers
 	for _, field in ipairs(self.fields) do
-		local lines = vim.api.nvim_buf_get_lines(field.bufnr, 0, -1, false)
+		local lines = vim.api.nvim_buf_get_lines(field.editor_context.bufnr, 0, -1, false)
 		content.fields[field.name] = table.concat(lines, "\n")
 	end
 

@@ -53,12 +53,12 @@ You can customize the plugin by passing a table to the =setup()= function. Here 
     quickdeck = "Refile",
     -- Whether to automatically open the Anki GUI to the relevant deck/note
     gui_browse_enabled = true,
-    -- A custom function to display the note buffers
-    custom_display = nil,
-    -- A custom function to delete the note buffers
-    custom_delete = nil,
+    -- A custom function to display the note buffers, must be false and NOT nil when disabled
+    custom_display = false,
+    -- A custom function to delete the note buffers, must be false and NOT nil when disabled
+    custom_delete = false,
     -- A hook to run after editing a buffer
-    after_edit_buffer_hook = nil,
+    after_edit_buffer_hook = false,
   })
 #+end_src
 
