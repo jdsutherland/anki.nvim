@@ -145,10 +145,10 @@ Commands without a suffix open the buffers in the current window.
 | =AnkiDeleteNote=               | Delete a note from any deck (prompts for selection).                              |
 | =AnkiSelectQuickDeck=          | Select a new deck to use as the QuickDeck.                                        |
 | =AnkiInfos=                    | Show information about the plugin.                                                |
-| =AnkiKillNote=                 | Kill the buffers for the current note.                                            |
-| =AnkiKillAll=                  | Kill all note buffers.                                                            |
-| =AnkiCurrentSendNote=          | Send (write) the current note's buffer contents to Anki.                          |
-| =AnkiCurrentPullNote=          | Pull the latest version of the current note from Anki into the buffer.            |
+| =AnkiKillNote=                 | Kill the note.                                                                    |
+| =AnkiKillAll=                  | Kill all the notes.                                                               |
+| =AnkiCurrentSendNote=          | Send (write) the note to Anki.                                                    |
+| =AnkiCurrentPullNote=          | Pull the latest version of the current note from Anki.                            |
 | =AnkiCurrentDeleteNote=        | Delete the current note from Anki.                                                |
 | =AnkiGUIBrowseToQuickDeck=     | Open the Anki GUI and browse to the QuickDeck.                                    |
 | =AnkiGUIBrowseCurrentDeck=     | Open the Anki GUI and browse to the current note's deck.                          |

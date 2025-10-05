@@ -326,7 +326,7 @@ M.edit_note_from_quick_deck = function(arguments)
 					)
 
 					-- Set the content of the tags buffers
-					vim.api.nvim_buf_set_lines(note.tags.integer, 0, -1, false, note_selection.value.tags)
+					vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
 
 					-- Set the content of the fields buffers
 					for i, v in pairs(sorted_fields) do
@@ -524,7 +524,7 @@ M.edit_note = function(arguments)
 			)
 
 			-- Set the content of the tags buffers
-			vim.api.nvim_buf_set_lines(note.tags.integer, 0, -1, false, note_selection.value.tags)
+			vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
 
 			-- Set the content of the fields buffers
 			for i, _ in ipairs(sorted_fields) do
@@ -561,6 +561,10 @@ M.pull_note = function(bufnr)
 	end
 	local first_note = result_notes_info[1]
 
+	-- Set the content of the tags buffers
+	vim.api.nvim_buf_set_lines(note_to_pull.tags.bufnr, 0, -1, false, first_note.tags)
+
+	-- Set the content of the fields buffers
 	for key, field in pairs(first_note.fields) do
 		local field_found_in_note = note_to_pull:find_field_by_name(key)
 		if field_found_in_note then
@@ -569,7 +573,7 @@ M.pull_note = function(bufnr)
 				0,
 				-1,
 				false,
-				string.split(field.value)
+				string.split(field.value, "\n")
 			)
 		end
 	end
@@ -864,9 +868,9 @@ M.add_deck = function(arguments)
 						return
 					end
 					local deck_id = safe_call(ankiconnect.create_deck, deck_to_create)
-          if not deck_id then
-            return
-          end
+					if not deck_id then
+						return
+					end
 					notification.info("Deck created: " .. deck_to_create)
 				end)
 				return true
@@ -877,4 +881,3 @@ M.add_deck = function(arguments)
 end
 
 return M
-
