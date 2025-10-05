@@ -159,3 +159,4 @@ Commands without a suffix open the buffers in the current window.
 - [ ] Delete decks
 - [ ] Move notes between decks
 - [ ] Add some tests if needed, remove the existing ones are they aren't usefull anymore
+- [ ] Demo video

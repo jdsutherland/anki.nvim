@@ -7,6 +7,7 @@ local conf = require("telescope.config").values
 local ankiconnect = require("anki.ankiconnect")
 local anki_state = require("anki.state")
 local classes = require("anki.classes")
+local notification = require("anki.notification")
 
 local M = {}
 
@@ -32,7 +33,7 @@ end
 local function safe_call(fn, ...)
 	local response = fn(...)
 	if response.error ~= vim.NIL then
-		vim.notify(vim.inspect(response.error), vim.log.levels.ERROR)
+		notification.error(vim.inspect(response.error))
 		return nil
 	end
 	return response.result
@@ -133,8 +134,7 @@ local function pick_one(prompt, results, opts, on_select, entry_maker)
 					if entry then
 						on_select(entry)
 					else
-						vim.notify("Empty selection", vim.log.levels.ERROR)
-						return false
+						notification.warn("No item selected")
 					end
 				end)
 				return true
@@ -278,7 +278,7 @@ M.edit_note_from_quick_deck = function(arguments)
 	end
 
 	if next(result_notes_info) == nil then
-		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
+		notification.warn("Deck is empty: " .. anki_state.quickdeck)
 		return
 	end
 
@@ -295,8 +295,8 @@ M.edit_note_from_quick_deck = function(arguments)
 					actions.close(prompt_bufnr)
 					local note_selection = action_state.get_selected_entry()
 					if not note_selection then
-						vim.notify("Empty selection", vim.log.levels.ERROR)
-						return false
+						notification.warn("No note selected")
+						return
 					end
 
 					local sorted_fields = {}
@@ -350,7 +350,7 @@ end
 M.kill_note = function(bufnr)
 	local found = M.search_for_note(bufnr)
 	if not found then
-		vim.notify("Note not Found in kill note", vim.log.levels.ERROR)
+		notification.warn("No Anki note buffer found")
 		return
 	end
 
@@ -359,14 +359,13 @@ M.kill_note = function(bufnr)
 	M.delete_note_buffers(note_to_kill)
 
 	table.remove(anki_state.notes, found)
-
-	vim.notify("Note killed")
+	notification.info("Note buffers killed")
 end
 
 M.kill_all = function()
 	local notes_to_clean = vim.deepcopy(anki_state.notes)
 	if #notes_to_clean == 0 then
-		vim.notify("No active Anki notes to clean up.")
+		notification.info("No active Anki notes to clean up.")
 		return
 	end
 
@@ -376,14 +375,14 @@ M.kill_all = function()
 
 	-- Clear the state table
 	anki_state.notes = {}
-	vim.notify("Cleaned up " .. #notes_to_clean .. " Anki note(s).")
+	notification.info("Cleaned up " .. #notes_to_clean .. " Anki note(s).")
 end
 
 M.send_note = function(bufnr, kill)
 	kill = kill or nil
 	local found = M.search_for_note(bufnr)
 	if not found then
-		vim.notify("Note not Found in send note", vim.log.levels.ERROR)
+		notification.warn("No Anki note buffer found")
 		return
 	end
 
@@ -427,7 +426,7 @@ M.send_note = function(bufnr, kill)
 	end
 
 	if note_to_send.id == nil and can_add_note == false then
-		vim.notify(vim.inspect("The note already exists but it's id is unknwon by anki.nvim"), vim.log.levels.ERROR)
+		notification.error("The note already exists but its ID is unknown by anki.nvim")
 		return
 	end
 
@@ -442,20 +441,20 @@ M.send_note = function(bufnr, kill)
 
 		if config.options.gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
-			local _ = safe_call(ankiconnect.gui_browse, query)
+			safe_call(ankiconnect.gui_browse, query)
 		end
 	else
-		-- -- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
+		-- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
 		if config.options.gui_browse_enabled then
 			local query = "nid:1"
-			local _ = safe_call(ankiconnect.gui_browse, query)
+			safe_call(ankiconnect.gui_browse, query)
 		end
 
 		local _ = safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
 
 		if config.options.gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
-			local _ = safe_call(ankiconnect.gui_browse, query)
+			safe_call(ankiconnect.gui_browse, query)
 		end
 	end
 
@@ -465,9 +464,9 @@ M.send_note = function(bufnr, kill)
 	end
 
 	if msg_status then
-		vim.notify("Anki note added.")
+		notification.info("Note added")
 	else
-		vim.notify("Anki note updated.")
+		notification.info("Note updated")
 	end
 end
 
@@ -494,7 +493,7 @@ M.edit_note = function(arguments)
 		end
 
 		if next(result_deck_notes_info) == nil then
-			vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
+			notification.warn("Deck is empty: " .. deck_selection[1])
 			return
 		end
 
@@ -546,12 +545,12 @@ end
 M.pull_note = function(bufnr)
 	local found = M.search_for_note(bufnr)
 	if not found then
-		vim.notify("Note not Found in pull note", vim.log.levels.ERROR)
+		notification.warn("No Anki note buffer found")
 		return
 	end
 	local note_to_pull = anki_state.notes[found]
 	if not note_to_pull.id then
-		vim.notify("Note doesn't have an id", vim.log.levels.ERROR)
+		notification.error("Cannot pull note, it was not sent to Anki yet")
 		return
 	end
 
@@ -574,30 +573,29 @@ M.pull_note = function(bufnr)
 			)
 		end
 	end
-	vim.notify("Anki note pulled.")
+	notification.info("Note pulled from Anki")
 end
 
 M.delete_note = function(bufnr)
 	local found = M.search_for_note(bufnr)
 	if not found then
-		vim.notify("Note not found", vim.log.levels.ERROR)
+		notification.warn("No Anki note buffer found")
 		return
 	end
 	local note_to_delete = anki_state.notes[found]
 	if note_to_delete.id == nil then
-		vim.notify("Can Not Delete The Note Because It Wasn't Yet Sent To Anki")
+		notification.warn("Cannot delete note, it was not sent to Anki yet")
 		return
 	end
 
 	local _ = safe_call(ankiconnect.delete_notes, { note_to_delete.id })
+	note_to_delete.id = nil
+	notification.info("Note deleted")
 
 	if config.options.gui_browse_enabled then
 		local query = string.format('"deck:%s"', note_to_delete.deck_name)
-		local _ = safe_call(ankiconnect.gui_browse, query)
+		safe_call(ankiconnect.gui_browse, query)
 	end
-
-	note_to_delete.id = nil
-	vim.notify("Anki Note Deleted")
 end
 
 M.pick_delete_notes = function(opts)
@@ -629,7 +627,7 @@ M.pick_delete_notes = function(opts)
 					end
 
 					if next(result_deck_notes_info) == nil then
-						vim.notify("Deck [" .. deck_selection[1] .. "] is empty", vim.log.levels.ERROR)
+						notification.warn("Deck is empty: " .. deck_selection[1])
 						return
 					end
 
@@ -650,25 +648,24 @@ M.pick_delete_notes = function(opts)
 									if vim.tbl_isempty(multi) then
 										local note_selection = action_state.get_selected_entry()
 										if not note_selection then
-											vim.notify("Empty selection", vim.log.levels.ERROR)
-											return false
+											notification.warn("No note selected")
+											return
 										end
 										local note_id_to_delete = note_selection.value.noteId
 
 										local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-										vim.notify("Anki Note Deleted")
+										notification.info("Note deleted")
 									else
 										for _, note in ipairs(multi) do
 											local note_id_to_delete = note.value.noteId
 											local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-											vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
 										end
+										notification.info("Deleted " .. #multi .. " note(s)")
 									end
 
 									if config.options.gui_browse_enabled then
 										local query = string.format('"deck:%s"', deck_selection[1])
-										local _ = safe_call(ankiconnect.gui_browse, query)
-										vim.notify("Anki Gui Browsed to deck " .. deck_selection[1])
+										safe_call(ankiconnect.gui_browse, query)
 									end
 									return true
 								end)
@@ -699,7 +696,7 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 	end
 
 	if next(result_deck_notes_info) == nil then
-		vim.notify("Deck [" .. anki_state.quickdeck .. "] is empty", vim.log.levels.ERROR)
+		notification.warn("Deck is empty: " .. anki_state.quickdeck)
 		return
 	end
 
@@ -721,27 +718,25 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 					if vim.tbl_isempty(multi) then
 						local note_selection = action_state.get_selected_entry()
 						if not note_selection then
-							vim.notify("Empty selection", vim.log.levels.ERROR)
-							return false
+							notification.warn("No note selected")
+							return
 						end
 						local note_id_to_delete = note_selection.value.noteId
 
 						local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-						vim.notify("Anki Note Deleted")
+						notification.info("Note deleted")
 					else
 						for _, note in ipairs(multi) do
 							local note_id_to_delete = note.value.noteId
 							local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-							vim.notify("Anki Note " .. note_id_to_delete .. " Deleted")
 						end
+						notification.info("Deleted " .. #multi .. " note(s)")
 					end
 
 					if config.options.gui_browse_enabled then
 						local query = string.format('"deck:%s"', anki_state.quickdeck)
-						local _ = safe_call(ankiconnect.gui_browse, query)
-						vim.notify("Anki Gui Browsed to deck " .. anki_state.quickdeck)
+						safe_call(ankiconnect.gui_browse, query)
 					end
-
 					return true
 				end)
 				return true
@@ -808,40 +803,37 @@ end
 M.gui_deck = function()
 	local deck = anki_state.quickdeck
 	local query = string.format('"deck:%s"', deck)
-	local _ = safe_call(ankiconnect.gui_browse, query)
-	vim.notify("Anki Gui Browsed to " .. deck .. " deck")
+	safe_call(ankiconnect.gui_browse, query)
 end
 
 M.gui_deck_current = function(bufnr)
 	local found = M.search_for_note(bufnr)
 	if not found then
-		vim.notify("Note not Found in gui deck urrent", vim.log.levels.ERROR)
+		notification.warn("No Anki note buffer found")
 		return
 	end
 	local current_note = anki_state.notes[found]
 
 	local query = string.format('"deck:%s"', current_note.deck_name)
-	local _ = safe_call(ankiconnect.gui_browse, query)
-	vim.notify("Anki Gui Browsed to " .. current_note.deck_name .. " deck")
+	safe_call(ankiconnect.gui_browse, query)
 end
 
 M.gui_note = function(bufnr)
 	local found = M.search_for_note(bufnr)
 	if not found then
-		vim.notify("Note not Found in gui deck urrent", vim.log.levels.ERROR)
+		notification.warn("No Anki note buffer found")
 		return
 	end
 
 	local current_note = anki_state.notes[found]
 
 	if not current_note.id then
-		vim.notify("Note id nil, can't browse to note in the gui", vim.log.levels.WARN)
+		notification.warn("Cannot browse to note in GUI, it was not sent to Anki yet")
 		return
 	end
 
 	local query = string.format("nid:%s", current_note.id)
-	local _ = safe_call(ankiconnect.gui_browse, query)
-	vim.notify("Anki Gui Browsed to " .. current_note.id .. " note id")
+	safe_call(ankiconnect.gui_browse, query)
 end
 
 M.add_deck = function(arguments)
@@ -868,11 +860,14 @@ M.add_deck = function(arguments)
 					-- Prefer user prompt over entry when available
 					local deck_to_create = (prompt and prompt ~= "") and prompt or (entry and entry[1]) or nil
 					if not deck_to_create then
-						vim.notify("No deck name provided", vim.log.levels.WARN)
+						notification.warn("No deck name provided.")
 						return
 					end
-					local _ = safe_call(ankiconnect.create_deck, deck_to_create)
-					vim.notify("Deck '" .. deck_to_create .. "' created (or already existed).")
+					local deck_id = safe_call(ankiconnect.create_deck, deck_to_create)
+          if not deck_id then
+            return
+          end
+					notification.info("Deck created: " .. deck_to_create)
 				end)
 				return true
 			end,
@@ -882,3 +877,4 @@ M.add_deck = function(arguments)
 end
 
 return M
+
