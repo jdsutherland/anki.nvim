@@ -8,189 +8,33 @@ local ankiconnect = require("anki.ankiconnect")
 local anki_state = require("anki.state")
 local classes = require("anki.classes")
 local notification = require("anki.notification")
+local utils = require("anki.utils")
+local editor = require("anki.editor")
+local anki_pickers = require("anki.pickers")
 
 local M = {}
-
-local function table_length(tbl)
-	local length = 0
-	for key, value in pairs(tbl) do
-		length = length + 1
-	end
-	return length
-end
-
-function string.split(inputstr, sep)
-	if sep == nil then
-		sep = "%s" -- default separator is whitespace
-	end
-	local t = {}
-	for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
-		table.insert(t, str)
-	end
-	return t
-end
-
-local function safe_call(fn, ...)
-	local response = fn(...)
-	if response.error ~= vim.NIL then
-		notification.error(vim.inspect(response.error))
-		return nil
-	end
-	return response.result
-end
-
-local function create_note(deck_name, model_name, field_names, display_mode, id)
-	local fields = {}
-
-	for _, name in pairs(field_names) do
-		table.insert(
-			fields,
-			classes.Field:new({
-				editor_context = classes.EditorContext:new({
-					winid = vim.api.nvim_get_current_win(),
-					tabid = vim.api.nvim_get_current_tabpage(),
-					bufnr = vim.api.nvim_create_buf(true, true),
-				}),
-				name = name,
-			})
-		)
-	end
-
-	local note = classes.Note:new({
-		fields = fields,
-		tags = classes.EditorContext:new({
-			winid = vim.api.nvim_get_current_win(),
-			tabid = vim.api.nvim_get_current_tabpage(),
-			bufnr = vim.api.nvim_create_buf(true, true),
-		}),
-		deck_name = deck_name,
-		model_name = model_name,
-		id = id,
-		display_mode = display_mode,
-	})
-
-	table.insert(anki_state.notes, note)
-
-	return note
-end
-
-M.display_note = function(note, display)
-	anki_state.counter = anki_state.counter + 1
-	if display == "custom" and config.options.custom_display ~= nil then
-		config.options.custom_display(note)
-	else
-		if display == "tabpage" then
-			vim.cmd("tabnew")
-		elseif display == "vsplit" then
-			vim.cmd("vsplit")
-		elseif display == "split" then
-			vim.cmd("split")
-		end
-		local new_winid = vim.api.nvim_get_current_win()
-		local new_tabid = vim.api.nvim_get_current_tabpage()
-
-		note.tags.winid = new_winid
-		note.tags.tabid = new_tabid
-
-		local counter = anki_state.counter
-		vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://Tags_" .. counter)
-		vim.api.nvim_win_set_buf(0, note.tags.bufnr)
-
-		if config.options.after_edit_buffer_hook then
-			config.options.after_edit_buffer_hook()
-		end
-
-		for i = table_length(note.fields), 1, -1 do
-			vim.api.nvim_set_option_value("filetype", "html", { buf = note.fields[i].editor_context.bufnr })
-			vim.api.nvim_buf_set_name(
-				note.fields[i].editor_context.bufnr,
-				"anki://" .. note.fields[i].name .. "_" .. counter
-			)
-			vim.api.nvim_win_set_buf(0, note.fields[i].editor_context.bufnr)
-
-			note.fields[i].editor_context.winid = new_winid
-			note.fields[i].editor_context.tabid = new_tabid
-
-			if config.options.after_edit_buffer_hook then
-				config.options.after_edit_buffer_hook()
-			end
-		end
-	end
-end
-
-local function pick_one(prompt, results, opts, on_select, entry_maker)
-	pickers
-		.new(opts, {
-			prompt_title = prompt,
-			finder = finders.new_table({
-				results = results,
-				entry_maker = entry_maker,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-					local entry = action_state.get_selected_entry()
-					if entry then
-						on_select(entry)
-					else
-						notification.warn("No item selected")
-					end
-				end)
-				return true
-			end,
-		})
-		:find()
-end
-
-M.search_for_note = function(bufnr)
-	for index, note in ipairs(anki_state.notes) do
-		if note.tags.bufnr == bufnr then
-			return index
-		end
-		for _, field in ipairs(note.fields) do
-			if field.editor_context.bufnr == bufnr then
-				return index
-			end
-		end
-	end
-end
-
-M.delete_note_buffers = function(note)
-	if config.options.custom_delete then
-		config.options.custom_delete(note)
-	else
-		-- Close tags buffer
-		vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
-
-		-- Close fields buffers
-		for _, field in pairs(note.fields) do
-			vim.api.nvim_buf_delete(field.editor_context.bufnr, { force = true })
-		end
-	end
-end
 
 M.add_note = function(arguments)
 	arguments = arguments or {}
 	local opts = arguments.opts or {}
 	local display = arguments.display or nil
 
-	local result_deck_names = safe_call(ankiconnect.deck_names)
+	local result_deck_names = utils.safe_call(ankiconnect.deck_names)
 	if not result_deck_names then
 		return
 	end
-	local result_model_names = safe_call(ankiconnect.model_names)
+	local result_model_names = utils.safe_call(ankiconnect.model_names)
 	if not result_model_names then
 		return
 	end
-	pick_one("decks", result_deck_names, opts, function(deck_selection)
-		pick_one("models", result_model_names, opts, function(model_selection)
-			local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
+	anki_pickers.pick_one("decks", result_deck_names, opts, function(deck_selection)
+		anki_pickers.pick_one("models", result_model_names, opts, function(model_selection)
+			local result_field_names = utils.safe_call(ankiconnect.model_field_names, model_selection[1])
 			if not result_field_names then
 				return
 			end
-			local note = create_note(deck_selection[1], model_selection[1], result_field_names, display)
-			M.display_note(note, display)
+			local note = editor.create_note(deck_selection[1], model_selection[1], result_field_names, display)
+			editor.display_note(note, display)
 		end)
 	end)
 end
@@ -204,59 +48,30 @@ M.add_note_to_quick_deck = function(arguments)
 		return
 	end
 
-	local result_model_names = safe_call(ankiconnect.model_names)
+	local result_model_names = utils.safe_call(ankiconnect.model_names)
 	if not result_model_names then
 		return
 	end
 
-	pick_one("models", result_model_names, opts, function(model_selection)
-		local result_field_names = safe_call(ankiconnect.model_field_names, model_selection[1])
+	anki_pickers.pick_one("models", result_model_names, opts, function(model_selection)
+		local result_field_names = utils.safe_call(ankiconnect.model_field_names, model_selection[1])
 		if not result_field_names then
 			return
 		end
-		local note = create_note(anki_state.quickdeck, model_selection[1], result_field_names, display)
-		M.display_note(note, display)
+		local note = editor.create_note(anki_state.quickdeck, model_selection[1], result_field_names, display)
+		editor.display_note(note, display)
 	end)
 end
 
 M.select_state_quickdeck = function(opts)
 	opts = opts or {}
-	local result_deck_names = safe_call(ankiconnect.deck_names)
+	local result_deck_names = utils.safe_call(ankiconnect.deck_names)
 	if not result_deck_names then
 		return
 	end
-	pick_one("decks", result_deck_names, opts, function(deck_selection)
+	anki_pickers.pick_one("decks", result_deck_names, opts, function(deck_selection)
 		anki_state.quickdeck = deck_selection[1]
 	end)
-end
-
-M.note_entry_maker = function(entry)
-	local sorted_fields = {}
-	-- Initialize table
-	for i = 0, table_length(entry.fields) do
-		sorted_fields[(i + 1)] = nil
-	end
-
-	-- NOTE: field.order starts at 0
-	for key, field in pairs(entry.fields) do
-		table.insert(sorted_fields, (field.order + 1), {
-			value = field.value,
-			name = key,
-		})
-	end
-
-	-- https://github.com/nvim-telescope/telescope.nvim/issues/3163#issuecomment-2167678288
-	local display, ordinal = "", ""
-	for _, field in pairs(sorted_fields) do
-		display = display .. " [" .. field.name:gsub("\n", "") .. "]> " .. field.value:gsub("\n", "")
-		ordinal = ordinal .. " [" .. field.name:gsub("\n", "") .. "]> " .. field.value:gsub("\n", "")
-	end
-
-	return {
-		value = entry,
-		display = display,
-		ordinal = ordinal,
-	}
 end
 
 M.edit_note_from_quick_deck = function(arguments)
@@ -268,11 +83,11 @@ M.edit_note_from_quick_deck = function(arguments)
 		return
 	end
 	local query = string.format('"deck:%s"', anki_state.quickdeck)
-	local result_notes_ids = safe_call(ankiconnect.find_notes, query)
+	local result_notes_ids = utils.safe_call(ankiconnect.find_notes, query)
 	if not result_notes_ids then
 		return
 	end
-	local result_notes_info = safe_call(ankiconnect.notes_info, result_notes_ids)
+	local result_notes_info = utils.safe_call(ankiconnect.notes_info, result_notes_ids)
 	if not result_notes_info then
 		return
 	end
@@ -282,105 +97,56 @@ M.edit_note_from_quick_deck = function(arguments)
 		return
 	end
 
-	pickers
-		.new(opts, {
-			prompt_title = "notes",
-			finder = finders.new_table({
-				results = result_notes_info,
-				entry_maker = M.note_entry_maker,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-					local note_selection = action_state.get_selected_entry()
-					if not note_selection then
-						notification.warn("No note selected")
-						return
-					end
+	anki_pickers.pick_one("notes", result_notes_info, opts, function(note_selection)
+		local sorted_fields = {}
 
-					local sorted_fields = {}
+		for i = 0, utils.table_length(note_selection.value.fields) do
+			sorted_fields[(i + 1)] = nil
+		end
 
-					for i = 0, table_length(note_selection.value.fields) do
-						sorted_fields[(i + 1)] = nil
-					end
+		for key, field in pairs(note_selection.value.fields) do
+			table.insert(sorted_fields, (field.order + 1), {
+				value = field.value,
+				name = key,
+			})
+		end
 
-					for key, field in pairs(note_selection.value.fields) do
-						table.insert(sorted_fields, (field.order + 1), {
-							value = field.value,
-							name = key,
-						})
-					end
+		local fields_names = {}
+		for key, field in pairs(sorted_fields) do
+			table.insert(fields_names, field.name)
+		end
 
-					local fields_names = {}
-					for key, field in pairs(sorted_fields) do
-						table.insert(fields_names, field.name)
-					end
+		local note = editor.create_note(
+			anki_state.quickdeck,
+			note_selection.value.modelName,
+			fields_names,
+			display,
+			note_selection.value.noteId
+		)
 
-					local note = create_note(
-						anki_state.quickdeck,
-						note_selection.value.modelName,
-						fields_names,
-						display,
-						note_selection.value.noteId
-					)
+		-- Set the content of the tags buffers
+		vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
 
-					-- Set the content of the tags buffers
-					vim.api.nvim_buf_set_lines(note.tags.bufnr, 0, -1, false, note_selection.value.tags)
+		-- Set the content of the fields buffers
+		for i, v in pairs(sorted_fields) do
+			vim.api.nvim_buf_set_lines(note.fields[i].editor_context.bufnr, 0, -1, false, utils.split(v.value, "\n"))
+		end
 
-					-- Set the content of the fields buffers
-					for i, v in pairs(sorted_fields) do
-						vim.api.nvim_buf_set_lines(
-							note.fields[i].editor_context.bufnr,
-							0,
-							-1,
-							false,
-							string.split(v.value, "\n")
-						)
-					end
-
-					M.display_note(note, display)
-				end)
-				return true
-			end,
-		})
-		:find()
+		editor.display_note(note, display)
+	end, anki_pickers.note_entry_maker)
 end
 
 M.kill_note = function(bufnr)
-	local found = M.search_for_note(bufnr)
-	if not found then
-		notification.warn("No Anki note buffer found")
-		return
-	end
-
-	local note_to_kill = anki_state.notes[found]
-
-	M.delete_note_buffers(note_to_kill)
-
-	table.remove(anki_state.notes, found)
-	notification.info("Note buffers killed")
+	editor.kill_note(bufnr)
 end
 
 M.kill_all = function()
-	local notes_to_clean = vim.deepcopy(anki_state.notes)
-	if #notes_to_clean == 0 then
-		notification.info("No active Anki notes to clean up.")
-		return
-	end
-
-	for _, note in ipairs(notes_to_clean) do
-		M.delete_note_buffers(note)
-	end
-
-	-- Clear the state table
-	anki_state.notes = {}
-	notification.info("Cleaned up " .. #notes_to_clean .. " Anki note(s).")
+	editor.kill_all()
 end
 
 M.send_note = function(bufnr, kill)
 	kill = kill or nil
-	local found = M.search_for_note(bufnr)
+	local found = editor.search_for_note(bufnr)
 	if not found then
 		notification.warn("No Anki note buffer found")
 		return
@@ -397,7 +163,7 @@ M.send_note = function(bufnr, kill)
 	-- Make sure the note stil exists in anki
 	if note_to_send.id then
 		local query = string.format("nid:%s", note_to_send.id)
-		local result_notes = safe_call(ankiconnect.find_notes, query)
+		local result_notes = utils.safe_call(ankiconnect.find_notes, query)
 		if not result_notes then
 			return
 		end
@@ -410,7 +176,7 @@ M.send_note = function(bufnr, kill)
 	local can_add_note = true
 
 	-- Make sure we can add the note
-	local result_can_add_note = safe_call(
+	local result_can_add_note = utils.safe_call(
 		ankiconnect.can_add_notes_with_error_details,
 		note_to_send.deck_name,
 		note_to_send.model_name,
@@ -432,7 +198,7 @@ M.send_note = function(bufnr, kill)
 
 	if note_to_send.id == nil and can_add_note then
 		local result_note_id =
-			safe_call(ankiconnect.add_note, note_to_send.deck_name, note_to_send.model_name, fields, tags)
+			utils.safe_call(ankiconnect.add_note, note_to_send.deck_name, note_to_send.model_name, fields, tags)
 		if not result_note_id then
 			return
 		end
@@ -441,25 +207,25 @@ M.send_note = function(bufnr, kill)
 
 		if config.options.gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
-			safe_call(ankiconnect.gui_browse, query)
+			utils.safe_call(ankiconnect.gui_browse, query)
 		end
 	else
 		-- https://github.com/FooSoft/anki-connect/issues/82#issuecomment-1221895385
 		if config.options.gui_browse_enabled then
 			local query = "nid:1"
-			safe_call(ankiconnect.gui_browse, query)
+			utils.safe_call(ankiconnect.gui_browse, query)
 		end
 
-		local _ = safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
+		local _ = utils.safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
 
 		if config.options.gui_browse_enabled then
 			local query = string.format('"deck:%s" nid:%s', note_to_send.deck_name, note_to_send.id)
-			safe_call(ankiconnect.gui_browse, query)
+			utils.safe_call(ankiconnect.gui_browse, query)
 		end
 	end
 
 	if kill then
-		M.delete_note_buffers(note_to_send)
+		editor.delete_note_buffers(note_to_send)
 		table.remove(anki_state.notes, found)
 	end
 
@@ -475,19 +241,19 @@ M.edit_note = function(arguments)
 	local opts = arguments.opts or {}
 	local display = arguments.display or nil
 
-	local result_deck_names = safe_call(ankiconnect.deck_names)
+	local result_deck_names = utils.safe_call(ankiconnect.deck_names)
 	if not result_deck_names then
 		return
 	end
 
-	pick_one("decks", result_deck_names, opts, function(deck_selection)
+	anki_pickers.pick_one("decks", result_deck_names, opts, function(deck_selection)
 		local query = string.format('"deck:%s"', deck_selection[1])
 
-		local result_find_notes = safe_call(ankiconnect.find_notes, query)
+		local result_find_notes = utils.safe_call(ankiconnect.find_notes, query)
 		if not result_find_notes then
 			return
 		end
-		local result_deck_notes_info = safe_call(ankiconnect.notes_info, result_find_notes)
+		local result_deck_notes_info = utils.safe_call(ankiconnect.notes_info, result_find_notes)
 		if not result_deck_notes_info then
 			return
 		end
@@ -497,10 +263,10 @@ M.edit_note = function(arguments)
 			return
 		end
 
-		pick_one("notes", result_deck_notes_info, opts, function(note_selection)
+		anki_pickers.pick_one("notes", result_deck_notes_info, opts, function(note_selection)
 			local sorted_fields = {}
 			-- Initialize table
-			for i = 0, table_length(note_selection.value.fields) do
+			for i = 0, utils.table_length(note_selection.value.fields) do
 				sorted_fields[(i + 1)] = nil
 			end
 			for key, field in pairs(note_selection.value.fields) do
@@ -515,7 +281,7 @@ M.edit_note = function(arguments)
 				table.insert(fields_names, field.name)
 			end
 
-			local note = create_note(
+			local note = editor.create_note(
 				deck_selection[1],
 				note_selection.value.modelName,
 				fields_names,
@@ -533,17 +299,17 @@ M.edit_note = function(arguments)
 					0,
 					-1,
 					false,
-					string.split(sorted_fields[i].value, "\n")
+					utils.split(sorted_fields[i].value, "\n")
 				)
 			end
 
-			M.display_note(note, display)
-		end, M.note_entry_maker)
+			editor.display_note(note, display)
+		end, anki_pickers.note_entry_maker)
 	end)
 end
 
 M.pull_note = function(bufnr)
-	local found = M.search_for_note(bufnr)
+	local found = editor.search_for_note(bufnr)
 	if not found then
 		notification.warn("No Anki note buffer found")
 		return
@@ -555,7 +321,7 @@ M.pull_note = function(bufnr)
 	end
 
 	-- get the note infos
-	local result_notes_info = safe_call(ankiconnect.notes_info, { note_to_pull.id })
+	local result_notes_info = utils.safe_call(ankiconnect.notes_info, { note_to_pull.id })
 	if not result_notes_info then
 		return
 	end
@@ -573,7 +339,7 @@ M.pull_note = function(bufnr)
 				0,
 				-1,
 				false,
-				string.split(field.value, "\n")
+				utils.split(field.value, "\n")
 			)
 		end
 	end
@@ -581,7 +347,7 @@ M.pull_note = function(bufnr)
 end
 
 M.delete_note = function(bufnr)
-	local found = M.search_for_note(bufnr)
+	local found = editor.search_for_note(bufnr)
 	if not found then
 		notification.warn("No Anki note buffer found")
 		return
@@ -592,96 +358,58 @@ M.delete_note = function(bufnr)
 		return
 	end
 
-	local _ = safe_call(ankiconnect.delete_notes, { note_to_delete.id })
+	local _ = utils.safe_call(ankiconnect.delete_notes, { note_to_delete.id })
 	note_to_delete.id = nil
 	notification.info("Note deleted")
 
 	if config.options.gui_browse_enabled then
 		local query = string.format('"deck:%s"', note_to_delete.deck_name)
-		safe_call(ankiconnect.gui_browse, query)
+		utils.safe_call(ankiconnect.gui_browse, query)
 	end
 end
 
 M.pick_delete_notes = function(opts)
-	local result_deck_names = safe_call(ankiconnect.deck_names)
+	local result_deck_names = utils.safe_call(ankiconnect.deck_names)
 	if not result_deck_names then
 		return
 	end
-	pickers
-		.new(opts, {
-			prompt_title = "decks",
-			finder = finders.new_table({
-				results = result_deck_names,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
 
-					local deck_selection = action_state.get_selected_entry()
+	anki_pickers.pick_one("decks", result_deck_names, opts, function(deck_selection)
+		local query = string.format('"deck:%s"', deck_selection[1])
+		local result_find_notes = utils.safe_call(ankiconnect.find_notes, query)
+		if not result_find_notes then
+			return
+		end
+		local result_deck_notes_info = utils.safe_call(ankiconnect.notes_info, result_find_notes)
+		if not result_deck_notes_info then
+			return
+		end
 
-					local query = string.format('"deck:%s"', deck_selection[1])
-					local result_find_notes = safe_call(ankiconnect.find_notes, query)
-					if not result_find_notes then
-						return
-					end
-					local result_deck_notes_info = safe_call(ankiconnect.notes_info, result_find_notes)
-					if not result_deck_notes_info then
-						return
-					end
+		if next(result_deck_notes_info) == nil then
+			notification.warn("Deck is empty: " .. deck_selection[1])
+			return
+		end
 
-					if next(result_deck_notes_info) == nil then
-						notification.warn("Deck is empty: " .. deck_selection[1])
-						return
-					end
-
-					pickers
-						.new(opts, {
-							prompt_title = "notes",
-							finder = finders.new_table({
-								results = result_deck_notes_info,
-								entry_maker = M.note_entry_maker,
-							}),
-							sorter = conf.generic_sorter(opts),
-							attach_mappings = function(prompt_bufnr, map)
-								actions.select_default:replace(function()
-									local picker = action_state.get_current_picker(prompt_bufnr)
-									local multi = picker:get_multi_selection()
-
-									actions.close(prompt_bufnr)
-									if vim.tbl_isempty(multi) then
-										local note_selection = action_state.get_selected_entry()
-										if not note_selection then
-											notification.warn("No note selected")
-											return
-										end
-										local note_id_to_delete = note_selection.value.noteId
-
-										local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-										notification.info("Note deleted")
-									else
-										for _, note in ipairs(multi) do
-											local note_id_to_delete = note.value.noteId
-											local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-										end
-										notification.info("Deleted " .. #multi .. " note(s)")
-									end
-
-									if config.options.gui_browse_enabled then
-										local query = string.format('"deck:%s"', deck_selection[1])
-										safe_call(ankiconnect.gui_browse, query)
-									end
-									return true
-								end)
-								return true
-							end,
-						})
-						:find()
-				end)
-				return true
-			end,
-		})
-		:find()
+		anki_pickers.pick_one_or_multi("notes", result_deck_notes_info, opts, function(note_selection)
+			local note_id_to_delete = note_selection.value.noteId
+			local _ = utils.safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+			notification.info("Note deleted")
+			if config.options.gui_browse_enabled then
+				local query = string.format('"deck:%s"', deck_selection[1])
+				utils.safe_call(ankiconnect.gui_browse, query)
+			end
+		end, function(multi)
+			for _, note in ipairs(multi) do
+				local note_id_to_delete = note.value.noteId
+				local _ = utils.safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+			end
+			notification.info("Deleted " .. #multi .. " note(s)")
+			if config.options.gui_browse_enabled then
+				local query = string.format('"deck:%s"', deck_selection[1])
+				utils.safe_call(ankiconnect.gui_browse, query)
+			end
+		end, anki_pickers.note_entry_maker)
+	end)
 end
 
 M.pick_notes_to_delete_from_quick_deck = function(opts)
@@ -690,11 +418,11 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 	end
 	local query = string.format('"deck:%s"', anki_state.quickdeck)
 
-	local result_find_notes = safe_call(ankiconnect.find_notes, query)
+	local result_find_notes = utils.safe_call(ankiconnect.find_notes, query)
 	if not result_find_notes then
 		return
 	end
-	local result_deck_notes_info = safe_call(ankiconnect.notes_info, result_find_notes)
+	local result_deck_notes_info = utils.safe_call(ankiconnect.notes_info, result_find_notes)
 	if not result_deck_notes_info then
 		return
 	end
@@ -704,49 +432,26 @@ M.pick_notes_to_delete_from_quick_deck = function(opts)
 		return
 	end
 
-	pickers
-		.new(opts, {
-			prompt_title = "notes",
-			finder = finders.new_table({
-				results = result_deck_notes_info,
-				entry_maker = M.note_entry_maker,
-			}),
-			sorter = conf.generic_sorter(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					local picker = action_state.get_current_picker(prompt_bufnr)
-					local multi = picker:get_multi_selection()
+	anki_pickers.pick_one_or_multi("notes", result_deck_notes_info, opts, function(note_selection)
+		local note_id_to_delete = note_selection.value.noteId
 
-					actions.close(prompt_bufnr)
-
-					if vim.tbl_isempty(multi) then
-						local note_selection = action_state.get_selected_entry()
-						if not note_selection then
-							notification.warn("No note selected")
-							return
-						end
-						local note_id_to_delete = note_selection.value.noteId
-
-						local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-						notification.info("Note deleted")
-					else
-						for _, note in ipairs(multi) do
-							local note_id_to_delete = note.value.noteId
-							local _ = safe_call(ankiconnect.delete_notes, { note_id_to_delete })
-						end
-						notification.info("Deleted " .. #multi .. " note(s)")
-					end
-
-					if config.options.gui_browse_enabled then
-						local query = string.format('"deck:%s"', anki_state.quickdeck)
-						safe_call(ankiconnect.gui_browse, query)
-					end
-					return true
-				end)
-				return true
-			end,
-		})
-		:find()
+		local _ = utils.safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+		notification.info("Note deleted")
+		if config.options.gui_browse_enabled then
+			local query = string.format('"deck:%s"', anki_state.quickdeck)
+			utils.safe_call(ankiconnect.gui_browse, query)
+		end
+	end, function(multi)
+		for _, note in ipairs(multi) do
+			local note_id_to_delete = note.value.noteId
+			local _ = utils.safe_call(ankiconnect.delete_notes, { note_id_to_delete })
+		end
+		notification.info("Deleted " .. #multi .. " note(s)")
+		if config.options.gui_browse_enabled then
+			local query = string.format('"deck:%s"', anki_state.quickdeck)
+			utils.safe_call(ankiconnect.gui_browse, query)
+		end
+	end, anki_pickers.note_entry_maker)
 end
 
 M.infos = function()
@@ -754,7 +459,7 @@ M.infos = function()
 	-- Add the buffer mappings
 	vim.api.nvim_buf_set_keymap(infos_bufnr, "n", "q", "<Cmd>bd!<CR>", { noremap = true, silent = true })
 
-	local found = M.search_for_note(vim.api.nvim_get_current_buf())
+	local found = editor.search_for_note(vim.api.nvim_get_current_buf())
 	local current_note = nil
 	if found then
 		current_note = anki_state.notes[found]
@@ -807,11 +512,11 @@ end
 M.gui_deck = function()
 	local deck = anki_state.quickdeck
 	local query = string.format('"deck:%s"', deck)
-	safe_call(ankiconnect.gui_browse, query)
+	utils.safe_call(ankiconnect.gui_browse, query)
 end
 
 M.gui_deck_current = function(bufnr)
-	local found = M.search_for_note(bufnr)
+	local found = editor.search_for_note(bufnr)
 	if not found then
 		notification.warn("No Anki note buffer found")
 		return
@@ -819,11 +524,11 @@ M.gui_deck_current = function(bufnr)
 	local current_note = anki_state.notes[found]
 
 	local query = string.format('"deck:%s"', current_note.deck_name)
-	safe_call(ankiconnect.gui_browse, query)
+	utils.safe_call(ankiconnect.gui_browse, query)
 end
 
 M.gui_note = function(bufnr)
-	local found = M.search_for_note(bufnr)
+	local found = editor.search_for_note(bufnr)
 	if not found then
 		notification.warn("No Anki note buffer found")
 		return
@@ -837,14 +542,14 @@ M.gui_note = function(bufnr)
 	end
 
 	local query = string.format("nid:%s", current_note.id)
-	safe_call(ankiconnect.gui_browse, query)
+	utils.safe_call(ankiconnect.gui_browse, query)
 end
 
 M.add_deck = function(arguments)
 	arguments = arguments or {}
 	local opts = arguments.opts or {}
 
-	local deck_names = safe_call(ankiconnect.deck_names)
+	local deck_names = utils.safe_call(ankiconnect.deck_names)
 	if not deck_names then
 		return
 	end
@@ -867,7 +572,7 @@ M.add_deck = function(arguments)
 						notification.warn("No deck name provided.")
 						return
 					end
-					local deck_id = safe_call(ankiconnect.create_deck, deck_to_create)
+					local deck_id = utils.safe_call(ankiconnect.create_deck, deck_to_create)
 					if not deck_id then
 						return
 					end
