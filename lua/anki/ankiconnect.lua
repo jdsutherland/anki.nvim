@@ -146,10 +146,22 @@ M.delete_notes = function(notes)
 	})
 end
 
+M.delete_decks = function(decks)
+	if type(decks) ~= "table" then
+		error("Expected a table as argument")
+	end
+	return anki_connect_invoke({
+		action = "deleteDecks",
+		params = {
+			decks = decks,
+			cardsToo = true,
+		},
+	})
+end
+
 M.gui_browse = function(query)
 	return anki_connect_invoke({
 		action = "guiBrowse",
-		version = 6,
 		params = {
 			query = query,
 			-- reorderCards = {

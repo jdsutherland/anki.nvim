@@ -52,16 +52,19 @@ local function setup_mappings()
     }},
     -- GUI Browse
     { "b", "GUI Browse", {
-      { "q", function() api.gui_deck() end, "To QuickDeck" },
-      { "d", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "To Current Note Deck" },
-      { "n", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "To Current Note" },
+      { "q", function() api.gui_deck() end, "QuickDeck" },
+      { "d", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "Current Note's Deck" },
+      { "n", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "Current Note" },
+    }},
+    { "d", "Delete", {
+      { "q", function() api.pick_notes_to_delete_from_quick_deck() end, "Note(s) from QuickDeck" },
+      { "a", function() api.pick_delete_notes() end, "Note(s) from Any Deck" },
+      { "d", function() api.delete_deck() end, "Deck(s)" },
     }},
   }
 
   -- Single mappings
   local single_mappings = {
-    { "d", function() api.pick_notes_to_delete_from_quick_deck() end, "QuickDeck Delete Notes" },
-    { "D", function() api.pick_delete_notes() end, "Delete Notes" },
     { "q", function() api.select_state_quickdeck() end, "Select QuickDeck" },
     { "i", function() api.infos() end, "Infos" },
     { "c", function() api.add_deck() end, "Add Deck" },
@@ -113,27 +116,29 @@ local function setup_commands()
   end
 
   local commands = {
-    { "AnkiQuickDeckAddNote", function() api.add_note_to_quick_deck() end, "Create a note on the QuickDeck" },
-    { "AnkiQuickDeckEditNote", function() api.edit_note_from_quick_deck() end, "Edit a note on the QuickDeck" },
-    { "AnkiAddNote", function() api.add_note() end, "Create a note" },
+    { "AnkiQuickDeckAddNote", function() api.add_note_to_quick_deck() end, "Add a note to the QuickDeck" },
+    { "AnkiQuickDeckEditNote", function() api.edit_note_from_quick_deck() end, "Edit a note from the QuickDeck" },
+    { "AnkiAddNote", function() api.add_note() end, "Add a note" },
     { "AnkiEditNote", function() api.edit_note() end, "Edit a note" },
   }
 
   local single_commands = {
-    { "AnkiAddDeck", function() api.add_deck() end, "Create a deck" },
-    { "AnkiQuickDeckDeleteNote", function() api.pick_notes_to_delete_from_quick_deck() end, "Delete a note on the QuickDeck" },
-    { "AnkiDeleteNote", function() api.pick_delete_notes() end, "Delete a note" },
+    { "AnkiAddDeck", function() api.add_deck() end, "Add a deck" },
+    { "AnkiQuickDeckDeleteNote", function() api.pick_notes_to_delete_from_quick_deck() end, "Delete note(s) from the QuickDeck" },
+    { "AnkiDeleteNote", function() api.pick_delete_notes() end, "Delete note(s) from any deck" },
+    { "AnkiDeleteDeck", function() api.delete_deck() end, "Delete one or more decks" },
     { "AnkiSelectQuickDeck", function() api.select_state_quickdeck() end, "Select the QuickDeck"},
-    { "AnkiInfos", function() api.infos() end, "Infos"},
-    { "AnkiKillNote", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill note buffers"},
-    { "AnkiKillAll", function() api.kill_all() end, "Kill all the notes buffers"},
-    { "AnkiCurrentSendNote", function() api.send_note(vim.api.nvim_get_current_buf()) end, "Send the note of to anki"},
-    { "AnkiCurrentPullNote", function() api.pull_note(vim.api.nvim_get_current_buf()) end, "Pull the note from anki"},
-    { "AnkiCurrentDeleteNote", function() api.delete_note(vim.api.nvim_get_current_buf()) end, "Delete the note from anki"},
-    { "AnkiGUIBrowseToQuickDeck", function() api.gui_deck() end, "Go to the QuickDeck in the GUI"},
-    { "AnkiGUIBrowseCurrentDeck", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "Go to the deck of the current note in the GUI"},
-    { "AnkiGUIBrowseCurrentNote", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "Go to the current note in the GUI"},
+    { "AnkiInfos", function() api.infos() end, "Show info about the plugin and current note"},
+    { "AnkiKillNote", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill current note's buffers"},
+    { "AnkiKillAll", function() api.kill_all() end, "Kill all note buffers"},
+    { "AnkiCurrentSendNote", function() api.send_note(vim.api.nvim_get_current_buf()) end, "Send the current note to Anki"},
+    { "AnkiCurrentPullNote", function() api.pull_note(vim.api.nvim_get_current_buf()) end, "Pull the current note from Anki"},
+    { "AnkiCurrentDeleteNote", function() api.delete_note(vim.api.nvim_get_current_buf()) end, "Delete the current note from Anki"},
+    { "AnkiGUIBrowseToQuickDeck", function() api.gui_deck() end, "Browse the QuickDeck in Anki's GUI"},
+    { "AnkiGUIBrowseCurrentDeck", function() api.gui_deck_current(vim.api.nvim_get_current_buf()) end, "Browse the current note's deck in Anki's GUI"},
+    { "AnkiGUIBrowseCurrentNote", function() api.gui_note(vim.api.nvim_get_current_buf()) end, "Browse the current note in Anki's GUI"},
   }
+
 
   -- Loop to create commands with display options
   for _, cmd_def in ipairs(commands) do

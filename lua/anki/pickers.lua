@@ -50,8 +50,9 @@ function M.pick_one(prompt, results, opts, on_select, entry_maker)
 				actions.select_default:replace(function()
 					actions.close(prompt_bufnr)
 					local entry = action_state.get_selected_entry()
+					local prompt_line = action_state.get_current_line()
 					if entry then
-						on_select(entry)
+						on_select(entry, prompt_line)
 					else
 						notification.warn("No item selected")
 					end
@@ -73,15 +74,14 @@ function M.pick_one_or_multi(prompt, results, opts, on_select_one, on_select_mul
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
 				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
 					local picker = action_state.get_current_picker(prompt_bufnr)
+					actions.close(prompt_bufnr)
 					local multi = picker:get_multi_selection()
 					local entry = action_state.get_selected_entry()
-					actions.close(prompt_bufnr)
-					if entry then
-						on_select_one(entry)
-					elseif not vim.tbl_isempty(multi) then
+					if not vim.tbl_isempty(multi) then
 						on_select_multi(multi)
+					elseif entry then
+						on_select_one(entry)
 					else
 						notification.warn("No item selected")
 					end

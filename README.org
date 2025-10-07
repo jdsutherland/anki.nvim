@@ -143,6 +143,7 @@ Commands without a suffix open the buffers in the current window.
 | =AnkiAddDeck=                  | Add a new deck.                                                                   |
 | =AnkiQuickDeckDeleteNote=      | Delete a note from the QuickDeck (prompts for selection).                         |
 | =AnkiDeleteNote=               | Delete a note from any deck (prompts for selection).                              |
+| =AnkiDeleteDeck=               | Delete deck(s).                                                                   |
 | =AnkiSelectQuickDeck=          | Select a new deck to use as the QuickDeck.                                        |
 | =AnkiInfos=                    | Show information about the plugin.                                                |
 | =AnkiKillNote=                 | Kill the note.                                                                    |
@@ -155,8 +156,7 @@ Commands without a suffix open the buffers in the current window.
 | =AnkiGUIBrowseCurrentNote=     | Open the Anki GUI and browse to the current note.                                 |
 
 * TODO's
-- [ ] Fix existing bugs
-- [ ] Delete decks
 - [ ] Move notes between decks
+- [ ] Better UX
 - [ ] Add some tests if needed, remove the existing ones are they aren't usefull anymore
 - [ ] Demo video

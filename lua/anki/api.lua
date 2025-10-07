@@ -585,4 +585,23 @@ M.add_deck = function(arguments)
 		:find()
 end
 
+M.delete_deck = function(arguments)
+	arguments = arguments or {}
+	local opts = arguments.opts or {}
+
+	local deck_names = utils.safe_call(ankiconnect.deck_names)
+	if not deck_names then
+		return
+	end
+	anki_pickers.pick_one_or_multi("deck", deck_names, opts, function(entry)
+		local deck = entry[1]
+		utils.safe_call(ankiconnect.delete_decks, { deck })
+		notification.info("Deck " .. deck .. " deleted")
+	end, function(multi)
+		local decks = multi
+		utils.safe_call(ankiconnect.delete_decks, decks)
+		notification.info(#decks .. " deck(s) deleted")
+	end)
+end
+
 return M
