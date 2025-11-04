@@ -141,6 +141,7 @@ Commands without a suffix open the buffers in the current window.
 | =AnkiEditNoteTabpage=          | Edit a note, prompting for a deck (opens buffers in a new tab page).              |
 | =AnkiEditNoteCustom=           | Edit a note, prompting for a deck (opens buffers with `custom_display` function). |
 | =AnkiAddDeck=                  | Add a new deck.                                                                   |
+| =AnkiMoveNote=                 | Move note(s) to another deck.                                                     |
 | =AnkiQuickDeckDeleteNote=      | Delete a note from the QuickDeck (prompts for selection).                         |
 | =AnkiDeleteNote=               | Delete a note from any deck (prompts for selection).                              |
 | =AnkiDeleteDeck=               | Delete deck(s).                                                                   |
@@ -156,7 +157,6 @@ Commands without a suffix open the buffers in the current window.
 | =AnkiGUIBrowseCurrentNote=     | Open the Anki GUI and browse to the current note.                                 |
 
 * TODO's
-- [ ] Move notes between decks
 - [ ] Better UX
 - [ ] Add some tests if needed, remove the existing ones are they aren't usefull anymore
 - [ ] Demo video

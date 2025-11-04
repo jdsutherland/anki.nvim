@@ -172,4 +172,8 @@ M.gui_browse = function(query)
 	})
 end
 
+M.change_deck = function(cards, deck)
+	return anki_connect_invoke({ action = "changeDeck", params = { cards = cards, deck = deck } })
+end
+
 return M

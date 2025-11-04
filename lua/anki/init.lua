@@ -68,6 +68,7 @@ local function setup_mappings()
     { "q", function() api.select_state_quickdeck() end, "Select QuickDeck" },
     { "i", function() api.infos() end, "Infos" },
     { "c", function() api.add_deck() end, "Add Deck" },
+    { "m", function() api.move_notes() end, "Move Note(s)" },
     { "k", function() api.kill_note(vim.api.nvim_get_current_buf()) end, "Kill Current Note" },
     { "K", function() api.kill_all() end, "Kill All Notes" },
     { "w", function() api.send_note(vim.api.nvim_get_current_buf()) end, "Send Current Note" },
@@ -125,6 +126,7 @@ local function setup_commands()
   local single_commands = {
     { "AnkiAddDeck", function() api.add_deck() end, "Add a deck" },
     { "AnkiQuickDeckDeleteNote", function() api.pick_notes_to_delete_from_quick_deck() end, "Delete note(s) from the QuickDeck" },
+    { "AnkiMoveNote", function() api.move_notes() end, "Move note(s) to another deck" },
     { "AnkiDeleteNote", function() api.pick_delete_notes() end, "Delete note(s) from any deck" },
     { "AnkiDeleteDeck", function() api.delete_deck() end, "Delete one or more decks" },
     { "AnkiSelectQuickDeck", function() api.select_state_quickdeck() end, "Select the QuickDeck"},

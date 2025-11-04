@@ -604,4 +604,63 @@ M.delete_deck = function(arguments)
 	end)
 end
 
+M.move_notes = function(arguments)
+	arguments = arguments or {}
+	local opts = arguments.opts or {}
+
+	local deck_names = utils.safe_call(ankiconnect.deck_names)
+	if not deck_names then
+		return
+	end
+	anki_pickers.pick_one("Select a deck to move note from", deck_names, opts, function(src_deck_entry)
+		local src_deck = src_deck_entry[1]
+		local query = string.format("\"deck:%s\"", src_deck)
+
+		local result_find_notes = utils.safe_call(ankiconnect.find_notes, query)
+		if not result_find_notes then
+			return
+		end
+		local result_deck_notes_info = utils.safe_call(ankiconnect.notes_info, result_find_notes)
+		if not result_deck_notes_info then
+			return
+		end
+
+		if next(result_deck_notes_info) == nil then
+			notification.warn("Deck is empty: " .. src_deck)
+			return
+		end
+
+		anki_pickers.pick_one_or_multi(
+			"notes",
+			result_deck_notes_info,
+			opts,
+			function(note_selection)
+				anki_pickers.pick_one("Select a deck to move note to", deck_names, opts, function(dest_deck_entry)
+					local dest_deck = dest_deck_entry[1]
+					local note_info = utils.safe_call(ankiconnect.notes_info, { note_selection.value.noteId })
+					if not note_info then
+						return
+					end
+					utils.safe_call(ankiconnect.change_deck, note_info[1].cards, dest_deck)
+					notification.info("Note moved to " .. dest_deck)
+				end)
+			end,
+			function(multi)
+				anki_pickers.pick_one("Select a deck to move notes to", deck_names, opts, function(dest_deck_entry)
+					local dest_deck = dest_deck_entry[1]
+					for _, note in ipairs(multi) do
+						local note_info = utils.safe_call(ankiconnect.notes_info, { note.value.noteId })
+						if not note_info then
+							return
+						end
+						utils.safe_call(ankiconnect.change_deck, note_info[1].cards, dest_deck)
+					end
+					notification.info(#multi .. " notes moved to " .. dest_deck)
+				end)
+			end,
+			anki_pickers.note_entry_maker
+		)
+	end)
+end
+
 return M
