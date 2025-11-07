@@ -1,46 +1,60 @@
-local deckname = "TestDeck"
+local ankiconnect = require("anki.ankiconnect")
+local config = require("anki.config")
+config.setup()
 
-describe("anki", function()
-	it("can be required", function()
-		require("anki")
+describe("anki.ankiconnect", function()
+	local test_deck_name = "test-deck-for-anki.nvim"
+	local note_id
+
+	before_each(function()
+		ankiconnect.create_deck(test_deck_name)
 	end)
 
-	it("deck_names returns a table", function()
-		local decks = require("anki.ankiconnect").deck_names()
-		assert(type(decks) == "table", "decks is not a table")
+	after_each(function()
+		ankiconnect.delete_decks({ test_deck_name })
 	end)
 
-	it("create_deck result returns a number", function()
-		local response = require("anki.ankiconnect").create_deck(deckname)
-		assert(type(response.result) == "number", "deck_id is not a number")
-	end)
-
-	it("find_notes returns a table of numbers", function()
-		local notes = require("anki.ankiconnect").find_notes('"deck:' .. deckname .. '"')
-		assert(type(notes) == "table", "notes is not a table")
-		for _, note in ipairs(notes) do
-			assert(type(note) == "number", "note is not a number")
+	it("should create a deck and it should be listed in deck_names", function()
+		local decks = ankiconnect.deck_names()
+		local found = false
+		for _, deck in ipairs(decks.result) do
+			if deck == test_deck_name then
+				found = true
+				break
+			end
 		end
+		assert.is_true(found)
 	end)
 
-	it("notes_info returns a table of table", function()
-		local notes = require("anki.ankiconnect").find_notes(deckname)
-		local notes_info = require("anki.ankiconnect").notes_info(notes)
-		assert(type(notes_info) == "table", "notes_info is not a table")
-		for _, note_info in ipairs(notes_info) do
-			assert(type(note_info) == "table", "note_info is not a table")
-		end
+	it("should get model_names", function()
+		local models = ankiconnect.model_names()
+		assert.is_true(#models.result > 0)
 	end)
 
-	it("model_field_names returns a table of string", function()
-		local field_names = require("anki.ankiconnect").model_field_names("Basic")
-		assert(type(field_names) == "table", "field_names is not a table")
-		for _, field_name in ipairs(field_names) do
-			assert(type(field_name) == "string", "field_name is not a string")
-		end
+	it("should get model_field_names for Basic model", function()
+		local fields = ankiconnect.model_field_names("Basic")
+		assert.are.same({ "Front", "Back" }, fields.result)
 	end)
 
-	-- TODO: test anki_connect_invoke parameters type
-	-- TODO: handle errors when anki stopped
-	----------------------------------------------------------------------------------------------------
+	it("should add and delete a note", function()
+		local result = ankiconnect.add_note(test_deck_name, "Basic", { Front = "test", Back = "test" }, { "test-tag" })
+		note_id = result.result
+		assert.is_not_nil(note_id)
+
+		local notes = ankiconnect.find_notes("deck:" .. test_deck_name)
+		assert.are.equal(1, #notes.result)
+		assert.are.equal(note_id, notes.result[1])
+
+		local info = ankiconnect.notes_info({ note_id })
+		assert.are.equal(note_id, info.result[1].noteId)
+
+		local update_result = ankiconnect.update_note(note_id, { Front = "updated" })
+		assert.is_equal(vim.NIL, update_result.error)
+
+		local delete_result = ankiconnect.delete_notes({ note_id })
+		assert.is_equal(vim.NIL, delete_result.error)
+
+		notes = ankiconnect.find_notes("deck:" .. test_deck_name)
+		assert.are.equal(0, #notes.result)
+	end)
 end)

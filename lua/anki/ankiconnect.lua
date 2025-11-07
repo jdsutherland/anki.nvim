@@ -2,6 +2,12 @@ local config = require("anki.config")
 local http_request = require("http.request")
 local http_headers = require("http.headers")
 
+---
+--- anki.ankiconnect
+---
+--- Provides low-level functions to communicate with the AnkiConnect API via HTTP.
+--- Wraps all AnkiConnect actions (decks, notes, models, etc.) for use by higher-level modules.
+---
 local M = {}
 
 local anki_connect_invoke = function(options)
@@ -45,7 +51,10 @@ local anki_connect_invoke = function(options)
 	local headers_, stream = request:go(config.options.timeout)
 	if not headers_ then
 		vim.notify(vim.inspect(headers_))
-		error("Failed to send request, make sure Anki is running and AnkiConnect is installed")
+		error([[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please: 
+    1. Make sure Anki is running 
+    2. Verify AnkiConnect addon is installed in Anki
+    3. Check that the URL in the config is correct]])
 	end
 
 	local body = stream:get_body_as_string()
@@ -60,10 +69,30 @@ M.deck_names = function()
 	return anki_connect_invoke({ action = "deckNames" })
 end
 
+M.version = function()
+	return anki_connect_invoke({ action = "version" })
+end
+
+M.request_permission = function()
+	return anki_connect_invoke({ action = "requestPermission" })
+end
+
+---
+--- Finds notes in Anki matching the given query string.
+---
+--- @param query string The search query.
+--- @return table|nil List of note IDs, or nil on error.
+--- @error Throws if query is not a string or AnkiConnect fails.
 M.find_notes = function(query)
 	return anki_connect_invoke({ action = "findNotes", params = { query = query } })
 end
 
+---
+--- Gets detailed information for a list of note IDs.
+---
+--- @param notes table List of note IDs.
+--- @return table|nil List of note info tables, or nil on error.
+--- @error Throws if notes is not a table or AnkiConnect fails.
 M.notes_info = function(notes)
 	return anki_connect_invoke({ action = "notesInfo", params = { notes = notes } })
 end
@@ -84,6 +113,15 @@ M.model_field_names = function(modelName)
 	return anki_connect_invoke({ action = "modelFieldNames", params = { modelName = modelName } })
 end
 
+---
+--- Adds a note to Anki via AnkiConnect.
+---
+--- @param deckName string The name of the deck.
+--- @param modelName string The name of the model.
+--- @param fields table The note fields.
+--- @param tags table The note tags.
+--- @return table|nil The result from AnkiConnect, or nil on error.
+--- @error Throws if arguments are invalid or AnkiConnect fails.
 M.add_note = function(deckName, modelName, fields, tags)
 	return anki_connect_invoke({
 		action = "addNote",
@@ -134,6 +172,12 @@ M.update_note = function(id, fields, tags)
 	})
 end
 
+---
+--- Deletes notes in Anki by note ID.
+---
+--- @param notes table List of note IDs to delete.
+--- @return table|nil The result from AnkiConnect, or nil on error.
+--- @error Throws if notes is not a table or AnkiConnect fails.
 M.delete_notes = function(notes)
 	if type(notes) ~= "table" then
 		error("Expected a table as argument")
