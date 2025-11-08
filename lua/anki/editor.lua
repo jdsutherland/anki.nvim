@@ -9,6 +9,7 @@ local EditorContext = require("anki.classes.editor_context")
 local Field = require("anki.classes.field")
 local Note = require("anki.classes.note")
 local notification = require("anki.notification")
+local config = require("anki.config")
 
 local M = {}
 
@@ -92,41 +93,19 @@ function M.display_note(note)
 	end
 
 	for _, bufnr in ipairs(bufnrs) do
-		vim.api.nvim_buf_set_keymap(
-			bufnr,
-			"n",
-			"<leader>w",
-			"<Cmd>lua require('anki.api').send_note(" .. bufnr .. ")<CR>",
-			{ noremap = true, silent = true }
-		)
-		vim.api.nvim_buf_set_keymap(
-			bufnr,
-			"n",
-			"<leader>p",
-			"<Cmd>lua require('anki.api').pull_note(" .. bufnr .. ")<CR>",
-			{ noremap = true, silent = true }
-		)
-		vim.api.nvim_buf_set_keymap(
-			bufnr,
-			"n",
-			"<leader>r",
-			"<Cmd>lua require('anki.api').delete_note(" .. bufnr .. ")<CR>",
-			{ noremap = true, silent = true }
-		)
-		vim.api.nvim_buf_set_keymap(
-			bufnr,
-			"n",
-			"<leader>k",
-			"<Cmd>lua require('anki.editor').kill_note(" .. bufnr .. ")<CR>",
-			{ noremap = true, silent = true }
-		)
-		vim.api.nvim_buf_set_keymap(
-			bufnr,
-			"n",
-			"?",
-			"<Cmd>lua require('anki.ui.help').show_help('editor')<CR>",
-			{ noremap = true, silent = true }
-		)
+		local mappings = {
+			send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", bufnr),
+			pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", bufnr),
+			delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", bufnr),
+			kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", bufnr),
+			show_help = string.format("<Cmd>lua require('anki.ui.help').show_help('editor')<CR>"),
+		}
+
+		for action, key in pairs(config.options.mappings.editor) do
+			if mappings[action] then
+				vim.api.nvim_buf_set_keymap(bufnr, "n", key, mappings[action], { noremap = true, silent = true })
+			end
+		end
 	end
 
 	for i = #note.fields, 1, -1 do

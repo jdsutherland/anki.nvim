@@ -90,7 +90,7 @@ function M.show_all_notes()
 end
 
 --- Updates the note buffer based on the currently selected deck.
-function M.update_notes_from_selection()
+function M.select_deck()
 	local line = vim.api.nvim_get_current_line()
 	local deck_name = line
 	if deck_name then

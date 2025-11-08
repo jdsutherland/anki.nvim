@@ -1,6 +1,7 @@
 local anki_state = require("anki.state")
 local notification = require("anki.notification")
 local utils = require("anki.utils")
+local config = require("anki.config")
 
 local M = {}
 
@@ -74,31 +75,50 @@ end
 --- Sets up keymaps for the deck buffer.
 -- @param bufnr number Buffer number for the deck list.
 function M.setup_deck_keymaps(bufnr)
-	set_buf_keymap(bufnr, "n", "?", "<Cmd>lua require('anki.ui.help').show_help('decks')<CR>")
-	set_buf_keymap(bufnr, "n", "q", "<Cmd>lua require('anki.ui.operations').close()<CR>")
-	set_buf_keymap(bufnr, "n", "<CR>", "<Cmd>lua require('anki.ui.operations').update_notes_from_selection()<CR>")
-	set_buf_keymap(bufnr, "n", "d", "<Cmd>lua require('anki.ui.deck_ops').delete_deck()<CR>")
-	set_buf_keymap(bufnr, "v", "d", "<Cmd>lua require('anki.ui.deck_ops').delete_deck()<CR>")
-	set_buf_keymap(bufnr, "n", "c", "<Cmd>lua require('anki.ui.deck_ops').create_deck()<CR>")
-	set_buf_keymap(bufnr, "n", "a", "<Cmd>lua require('anki.ui.note_ops').add_note()<CR>")
-	set_buf_keymap(bufnr, "n", "m", "<Cmd>lua require('anki.ui.deck_ops').rename_deck()<CR>")
-	set_buf_keymap(bufnr, "n", "o", "<Cmd>lua require('anki.ui.deck_ops').gui_deck()<CR>")
-	set_buf_keymap(bufnr, "n", "r", "<Cmd>lua require('anki.ui.operations').refresh_decks()<CR>")
+	local mappings = {
+		show_help = "<Cmd>lua require('anki.ui.help').show_help('decks')<CR>",
+		close = "<Cmd>lua require('anki.ui.operations').close()<CR>",
+		select_deck = "<Cmd>lua require('anki.ui.operations').select_deck()<CR>",
+		delete_deck = "<Cmd>lua require('anki.ui.deck_ops').delete_deck()<CR>",
+		create_deck = "<Cmd>lua require('anki.ui.deck_ops').create_deck()<CR>",
+		add_note = "<Cmd>lua require('anki.ui.note_ops').add_note()<CR>",
+		rename_deck = "<Cmd>lua require('anki.ui.deck_ops').rename_deck()<CR>",
+		gui_deck = "<Cmd>lua require('anki.ui.deck_ops').gui_deck()<CR>",
+		refresh_decks = "<Cmd>lua require('anki.ui.operations').refresh_decks()<CR>",
+	}
+
+	for action, key in pairs(config.options.mappings.deck) do
+		if mappings[action] then
+			set_buf_keymap(bufnr, "n", key, mappings[action])
+			if action == "delete_deck" then
+				set_buf_keymap(bufnr, "v", key, mappings[action])
+			end
+		end
+	end
 end
 
 --- Sets up keymaps for the note buffer, including visual mode mappings.
 -- @param bufnr number Buffer number for the note list.
 function M.setup_note_keymaps(bufnr)
-	set_buf_keymap(bufnr, "n", "?", "<Cmd>lua require('anki.ui.help').show_help('notes')<CR>")
-	set_buf_keymap(bufnr, "n", "q", "<Cmd>lua require('anki.ui.operations').close()<CR>")
-	set_buf_keymap(bufnr, "n", "<CR>", "<Cmd>lua require('anki.ui.note_ops').edit_note()<CR>")
-	set_buf_keymap(bufnr, "n", "d", "<Cmd>lua require('anki.ui.note_ops').delete_note()<CR>")
-	set_buf_keymap(bufnr, "v", "d", "<Cmd>lua require('anki.ui.note_ops').delete_note()<CR>")
-	set_buf_keymap(bufnr, "n", "o", "<Cmd>lua require('anki.ui.note_ops').gui_note()<CR>")
-	set_buf_keymap(bufnr, "n", "a", "<Cmd>lua require('anki.ui.operations').show_all_notes()<CR>")
-	set_buf_keymap(bufnr, "n", "r", "<Cmd>lua require('anki.ui.operations').refresh_notes()<CR>")
-	set_buf_keymap(bufnr, "n", "m", "<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>")
-	set_buf_keymap(bufnr, "v", "m", "<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>")
+	local mappings = {
+		show_help = "<Cmd>lua require('anki.ui.help').show_help('notes')<CR>",
+		close = "<Cmd>lua require('anki.ui.operations').close()<CR>",
+		edit_note = "<Cmd>lua require('anki.ui.note_ops').edit_note()<CR>",
+		delete_note = "<Cmd>lua require('anki.ui.note_ops').delete_note()<CR>",
+		gui_note = "<Cmd>lua require('anki.ui.note_ops').gui_note()<CR>",
+		show_all_notes = "<Cmd>lua require('anki.ui.operations').show_all_notes()<CR>",
+		refresh_notes = "<Cmd>lua require('anki.ui.operations').refresh_notes()<CR>",
+		move_note_to_deck = "<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>",
+	}
+
+	for action, key in pairs(config.options.mappings.note) do
+		if mappings[action] then
+			set_buf_keymap(bufnr, "n", key, mappings[action])
+			if action == "delete_note" or action == "move_note_to_deck" then
+				set_buf_keymap(bufnr, "v", key, mappings[action])
+			end
+		end
+	end
 end
 
 return M
