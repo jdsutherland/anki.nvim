@@ -2,6 +2,7 @@ local notification = require("anki.notification")
 local utils = require("anki.utils")
 local ankiconnect = require("anki.ankiconnect")
 local operations = require("anki.ui.operations")
+local anki_state = require("anki.state")
 
 local M = {}
 
@@ -22,15 +23,38 @@ end
 
 --- Deletes the currently selected deck after user confirmation.
 function M.delete_deck()
-	local deck_name = vim.api.nvim_get_current_line()
-	if not deck_name then
+	local mode = vim.fn.mode()
+	local start_line, end_line
+
+	if mode == "v" or mode == "V" or mode == "\22" then
+		start_line = vim.fn.line("v")
+		end_line = vim.fn.line(".")
+		if start_line > end_line then
+			start_line, end_line = end_line, start_line
+		end
+	else
+		start_line = vim.api.nvim_win_get_cursor(0)[1]
+		end_line = start_line
+	end
+
+	local decks = {}
+	for i = start_line, end_line do
+		local deck = anki_state.ui.decks[i]
+		if deck then
+			table.insert(decks, deck)
+		end
+	end
+
+	if #decks == 0 then
+		notification.warn("[anki.nvim][deck_ops] No decks selected.")
 		return
 	end
-	vim.ui.input({ prompt = "Are you sure you want to delete the deck '" .. deck_name .. "'? (Y/n)" }, function(input)
+
+	vim.ui.input({ prompt = "Are you sure you want to delete " .. #decks .. " deck ? (Y/n)" }, function(input)
 		if input == "Y" or input == "y" then
-			local result = utils.safe_call(ankiconnect.delete_decks, { deck_name })
+			local result = utils.safe_call(ankiconnect.delete_decks, decks)
 			if result == nil then
-				notification.error("[anki.nvim][deck_ops] Failed to delete deck '" .. deck_name .. "'")
+				notification.error("[anki.nvim][deck_ops] Failed to delete deck.")
 				return
 			end
 			operations.refresh_all()

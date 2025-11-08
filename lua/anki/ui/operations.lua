@@ -5,26 +5,6 @@ local editor = require("anki.editor")
 
 local M = {}
 
---- Updates the deck buffer with the latest deck names from Anki.
-local function update_decks_view()
-	local deck_names = utils.safe_call(ankiconnect.deck_names)
-	if deck_names then
-		vim.api.nvim_buf_set_lines(anki_state.ui.deck_buf_id, 0, -1, false, deck_names)
-	end
-end
-
---- Retrieves note information for a given query string.
--- @param query string The search query for notes.
--- @return table|nil List of note info tables, or nil on failure.
-local function get_notes_for_query(query)
-	local note_ids = utils.safe_call(ankiconnect.find_notes, query)
-	if not note_ids then
-		return nil
-	end
-
-	return utils.safe_call(ankiconnect.notes_info, note_ids)
-end
-
 --- Formats a note for display in the buffer.
 -- @param note table The note object.
 -- @return string The formatted note string.
@@ -54,8 +34,30 @@ local function display_notes_in_buffer(notes_info, filter_name)
 	vim.api.nvim_buf_set_lines(anki_state.ui.note_buf_id, 0, -1, false, note_lines)
 end
 
+--- Retrieves note information for a given query string.
+-- @param query string The search query for notes.
+-- @return table|nil List of note info tables, or nil on failure.
+local function get_notes_for_query(query)
+	local note_ids = utils.safe_call(ankiconnect.find_notes, query)
+	if not note_ids then
+		return nil
+	end
+
+	return utils.safe_call(ankiconnect.notes_info, note_ids)
+end
+
+--- Updates the deck buffer with the latest deck names from Anki.
+local function update_decks_view()
+	local deck_names = utils.safe_call(ankiconnect.deck_names)
+	if not deck_names then
+		return
+	end
+	anki_state.ui.decks = deck_names
+	vim.api.nvim_buf_set_lines(anki_state.ui.deck_buf_id, 0, -1, false, deck_names)
+end
+
 --- Refreshes the note buffer based on the current deck filter.
-local function refresh_notes_view()
+local function update_notes_view()
 	local deck_name = anki_state.ui.current_filter
 	local query = ""
 	if deck_name then
@@ -68,7 +70,7 @@ end
 --- Refreshes both the deck and note buffers.
 function M.refresh_all()
 	update_decks_view()
-	refresh_notes_view()
+	update_notes_view()
 end
 
 --- Refreshes the deck buffer.
@@ -78,7 +80,7 @@ end
 
 --- Refreshes the note buffer.
 function M.refresh_notes()
-	refresh_notes_view()
+	update_notes_view()
 end
 
 --- Shows all notes, ignoring any deck filter.

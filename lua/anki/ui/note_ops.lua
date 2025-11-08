@@ -108,33 +108,60 @@ end
 
 --- Deletes the note at the current cursor line after user confirmation.
 function M.delete_note()
-	local line_num = vim.api.nvim_win_get_cursor(0)[1]
-	local note = anki_state.ui.notes[line_num]
-	if not note then
-		return
-	end
+	local mode = vim.fn.mode()
+	local start_line, end_line
 
-	vim.ui.input({ prompt = "Are you sure you want to delete this note? (Y/n)" }, function(input)
-		if input == "Y" or input == "y" then
-			local result = utils.safe_call(ankiconnect.delete_notes, { note.noteId })
-			if result == nil then
-				notification.error("[anki.nvim][note_ops] Failed to delete note.")
-				return
-			end
-			operations.refresh_all()
+	if mode == "v" or mode == "V" or mode == "\22" then
+		start_line = vim.fn.line("v")
+		end_line = vim.fn.line(".")
+		if start_line > end_line then
+			start_line, end_line = end_line, start_line
 		end
-	end)
-end
+	else
+		start_line = vim.api.nvim_win_get_cursor(0)[1]
+		end_line = start_line
+	end
 
---- Opens the GUI browser for the note at the current cursor line in Anki.
-function M.gui_note()
-	local line_num = vim.api.nvim_win_get_cursor(0)[1]
-	local note = anki_state.ui.notes[line_num]
-	if not note then
+	local notes = {}
+	for i = start_line, end_line do
+		local note = anki_state.ui.notes[i]
+		if note then
+			table.insert(notes, note)
+		end
+	end
+
+	if #notes == 0 then
+		notification.warn("[anki.nvim][note_ops] No notes selected.")
 		return
 	end
-	local query = string.format("nid:%s", note.noteId)
-	utils.safe_call(ankiconnect.gui_browse, query)
+
+	local notes_ids = {}
+	for _, info in ipairs(notes) do
+		if info.cards then
+			for _, cid in ipairs(info.cards) do
+				table.insert(notes_ids, cid)
+			end
+		end
+	end
+	if #notes_ids == 0 then
+		notification.warn("[anki.nvim][note_ops] No note id found for selected notes.")
+		return
+	end
+
+	vim.ui.input(
+		{ prompt = "Are you sure you want to delete " .. tostring(#notes_ids) .. " note? (Y/n)" },
+		function(input)
+			if input == "Y" or input == "y" then
+				local result = utils.safe_call(ankiconnect.delete_notes, notes_ids)
+				if result == nil then
+					notification.error("[anki.nvim][note_ops] Failed to delete note.")
+					return
+				end
+				notification.info("[anki.nvim][note_ops] Deleted " .. tostring(#notes_ids) .. " note.")
+				operations.refresh_all()
+			end
+		end
+	)
 end
 
 ---
@@ -207,6 +234,17 @@ function M.move_note_to_deck()
 		)
 		operations.refresh_notes()
 	end)
+end
+
+--- Opens the GUI browser for the note at the current cursor line in Anki.
+function M.gui_note()
+	local line_num = vim.api.nvim_win_get_cursor(0)[1]
+	local note = anki_state.ui.notes[line_num]
+	if not note then
+		return
+	end
+	local query = string.format("nid:%s", note.noteId)
+	utils.safe_call(ankiconnect.gui_browse, query)
 end
 
 return M

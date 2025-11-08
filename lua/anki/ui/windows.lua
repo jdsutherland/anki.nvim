@@ -8,8 +8,8 @@ local M = {}
 -- @param bufnr number Buffer number
 -- @param lhs string Left-hand side (key)
 -- @param rhs string Right-hand side (command)
-local function set_buf_keymap(bufnr, lhs, rhs)
-	vim.api.nvim_buf_set_keymap(bufnr, "n", lhs, rhs, { noremap = true, silent = true })
+local function set_buf_keymap(bufnr, mode, lhs, rhs)
+	vim.api.nvim_buf_set_keymap(bufnr, mode, lhs, rhs, { noremap = true, silent = true })
 end
 
 --- Focuses the existing Anki window if it is valid.
@@ -74,35 +74,31 @@ end
 --- Sets up keymaps for the deck buffer.
 -- @param bufnr number Buffer number for the deck list.
 function M.setup_deck_keymaps(bufnr)
-	set_buf_keymap(bufnr, "?", "<Cmd>lua require('anki.ui.help').show_help('decks')<CR>")
-	set_buf_keymap(bufnr, "q", "<Cmd>lua require('anki.ui.operations').close()<CR>")
-	set_buf_keymap(bufnr, "<CR>", "<Cmd>lua require('anki.ui.operations').update_notes_from_selection()<CR>")
-	set_buf_keymap(bufnr, "d", "<Cmd>lua require('anki.ui.deck_ops').delete_deck()<CR>")
-	set_buf_keymap(bufnr, "c", "<Cmd>lua require('anki.ui.deck_ops').create_deck()<CR>")
-	set_buf_keymap(bufnr, "a", "<Cmd>lua require('anki.ui.note_ops').add_note()<CR>")
-	set_buf_keymap(bufnr, "m", "<Cmd>lua require('anki.ui.deck_ops').rename_deck()<CR>")
-	set_buf_keymap(bufnr, "o", "<Cmd>lua require('anki.ui.deck_ops').gui_deck()<CR>")
-	set_buf_keymap(bufnr, "r", "<Cmd>lua require('anki.ui.operations').refresh_decks()<CR>")
+	set_buf_keymap(bufnr, "n", "?", "<Cmd>lua require('anki.ui.help').show_help('decks')<CR>")
+	set_buf_keymap(bufnr, "n", "q", "<Cmd>lua require('anki.ui.operations').close()<CR>")
+	set_buf_keymap(bufnr, "n", "<CR>", "<Cmd>lua require('anki.ui.operations').update_notes_from_selection()<CR>")
+	set_buf_keymap(bufnr, "n", "d", "<Cmd>lua require('anki.ui.deck_ops').delete_deck()<CR>")
+	set_buf_keymap(bufnr, "v", "d", "<Cmd>lua require('anki.ui.deck_ops').delete_deck()<CR>")
+	set_buf_keymap(bufnr, "n", "c", "<Cmd>lua require('anki.ui.deck_ops').create_deck()<CR>")
+	set_buf_keymap(bufnr, "n", "a", "<Cmd>lua require('anki.ui.note_ops').add_note()<CR>")
+	set_buf_keymap(bufnr, "n", "m", "<Cmd>lua require('anki.ui.deck_ops').rename_deck()<CR>")
+	set_buf_keymap(bufnr, "n", "o", "<Cmd>lua require('anki.ui.deck_ops').gui_deck()<CR>")
+	set_buf_keymap(bufnr, "n", "r", "<Cmd>lua require('anki.ui.operations').refresh_decks()<CR>")
 end
 
 --- Sets up keymaps for the note buffer, including visual mode mappings.
 -- @param bufnr number Buffer number for the note list.
 function M.setup_note_keymaps(bufnr)
-	set_buf_keymap(bufnr, "?", "<Cmd>lua require('anki.ui.help').show_help('notes')<CR>")
-	set_buf_keymap(bufnr, "q", "<Cmd>lua require('anki.ui.operations').close()<CR>")
-	set_buf_keymap(bufnr, "<CR>", "<Cmd>lua require('anki.ui.note_ops').edit_note()<CR>")
-	set_buf_keymap(bufnr, "d", "<Cmd>lua require('anki.ui.note_ops').delete_note()<CR>")
-	set_buf_keymap(bufnr, "o", "<Cmd>lua require('anki.ui.note_ops').gui_note()<CR>")
-	set_buf_keymap(bufnr, "a", "<Cmd>lua require('anki.ui.operations').show_all_notes()<CR>")
-	set_buf_keymap(bufnr, "r", "<Cmd>lua require('anki.ui.operations').refresh_notes()<CR>")
-	set_buf_keymap(bufnr, "m", "<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>")
-	vim.api.nvim_buf_set_keymap(
-		bufnr,
-		"v",
-		"m",
-		"<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>",
-		{ noremap = true, silent = true }
-	)
+	set_buf_keymap(bufnr, "n", "?", "<Cmd>lua require('anki.ui.help').show_help('notes')<CR>")
+	set_buf_keymap(bufnr, "n", "q", "<Cmd>lua require('anki.ui.operations').close()<CR>")
+	set_buf_keymap(bufnr, "n", "<CR>", "<Cmd>lua require('anki.ui.note_ops').edit_note()<CR>")
+	set_buf_keymap(bufnr, "n", "d", "<Cmd>lua require('anki.ui.note_ops').delete_note()<CR>")
+	set_buf_keymap(bufnr, "v", "d", "<Cmd>lua require('anki.ui.note_ops').delete_note()<CR>")
+	set_buf_keymap(bufnr, "n", "o", "<Cmd>lua require('anki.ui.note_ops').gui_note()<CR>")
+	set_buf_keymap(bufnr, "n", "a", "<Cmd>lua require('anki.ui.operations').show_all_notes()<CR>")
+	set_buf_keymap(bufnr, "n", "r", "<Cmd>lua require('anki.ui.operations').refresh_notes()<CR>")
+	set_buf_keymap(bufnr, "n", "m", "<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>")
+	set_buf_keymap(bufnr, "v", "m", "<Cmd>lua require('anki.ui.note_ops').move_note_to_deck()<CR>")
 end
 
 return M
