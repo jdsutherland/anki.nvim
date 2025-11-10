@@ -8,7 +8,7 @@ local notification = require("anki.notification")
 
 local M = {}
 
---- Adds a new note to the specified deck, prompting for model and fields if needed.
+--- Adds a new note to the specified deck, prompting for model and cleaning up the previous note if needed.
 -- @param deck_name string|nil The name of the deck to add the note to. If nil, uses the current line.
 function M.add_note(deck_name)
 	if not deck_name then
@@ -18,23 +18,40 @@ function M.add_note(deck_name)
 		return
 	end
 
-	local model_names = utils.safe_call(ankiconnect.model_names)
-	if not model_names then
-		return
+	local function create_new_note()
+		local model_names = utils.safe_call(ankiconnect.model_names)
+		if not model_names then
+			return
+		end
+
+		vim.ui.select(model_names, { prompt = "Select a model" }, function(model_name)
+			if not model_name then
+				return
+			end
+			local field_names = utils.safe_call(ankiconnect.model_field_names, model_name)
+			if not field_names then
+				return
+			end
+			local note = editor.create_note(deck_name, model_name, field_names)
+			editor.display_note(note)
+			operations.refresh_all()
+		end)
 	end
 
-	vim.ui.select(model_names, { prompt = "Select a model" }, function(model_name)
-		if not model_name then
-			return
-		end
-		local field_names = utils.safe_call(ankiconnect.model_field_names, model_name)
-		if not field_names then
-			return
-		end
-		local note = editor.create_note(deck_name, model_name, field_names)
-		editor.display_note(note)
-		operations.refresh_all()
-	end)
+	if anki_state.current_note then
+		vim.ui.input({ prompt = "Save changes to current note before opening new one? (Y/n)" }, function(input)
+			if input == nil then
+				return
+			end
+			if input == "Y" or input == "y" then
+				api.send_note(anki_state.current_note.tags.bufnr)
+			end
+			editor.delete_note_buffers(anki_state.current_note)
+			create_new_note()
+		end)
+	else
+		create_new_note()
+	end
 end
 
 --- Edits the note at the current cursor line, handling unsaved changes if another note is open.
@@ -66,7 +83,6 @@ function M.switch_to_new_note(note)
 		editor.delete_note_buffers(anki_state.current_note)
 	end
 
-	-- Optimize field sorting using built-in table operations
 	local sorted_fields = {}
 	for key, field in pairs(note.fields) do
 		sorted_fields[field.order + 1] = {
@@ -75,7 +91,6 @@ function M.switch_to_new_note(note)
 		}
 	end
 
-	-- Extract field names efficiently
 	local fields_names = {}
 	for i = 1, #sorted_fields do
 		if sorted_fields[i] then
