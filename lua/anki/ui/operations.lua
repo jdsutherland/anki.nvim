@@ -11,7 +11,7 @@ local M = {}
 local function format_note_display(note)
 	local display = ""
 	for key, field in pairs(note.fields) do
-		display = display .. " [" .. key .. "]> " .. field.value
+		display = display .. " [" .. key .. "]> " .. string.gsub(field.value, "[\r\n]", " ")
 	end
 	return display
 end

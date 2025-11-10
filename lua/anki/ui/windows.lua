@@ -69,6 +69,9 @@ function M.create_layout()
 	vim.api.nvim_win_set_buf(note_win_id, anki_state.ui.note_buf_id)
 
 	vim.api.nvim_set_current_win(deck_win_id)
+
+	vim.api.nvim_buf_set_option(anki_state.ui.note_buf_id, "wrap", false)
+
 	return deck_win_id
 end
 
