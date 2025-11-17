@@ -19,6 +19,7 @@ function M.show_help(context)
 			"m - Rename Deck",
 			"o - Open in the Anki GUI",
 			"r - Refresh Decks",
+			"p - Switch Profile",
 		}
 	elseif context == "notes" then
 		help_lines = {

@@ -20,12 +20,8 @@ end
 -- @param notes_info table List of note info tables.
 -- @param filter_name string|nil The filter (deck) name.
 local function display_notes_in_buffer(notes_info, filter_name)
-	if not notes_info then
-		return
-	end
-
 	anki_state.ui.current_filter = filter_name
-	anki_state.ui.notes = notes_info
+	anki_state.ui.notes = notes_info or {}
 
 	local note_lines = {}
 	for _, note in ipairs(notes_info) do
@@ -58,13 +54,10 @@ end
 
 --- Refreshes the note buffer based on the current deck filter.
 local function update_notes_view()
-	local deck_name = anki_state.ui.current_filter
-	local query = ""
-	if deck_name then
-		query = string.format('"deck:%s"', deck_name)
-	end
+	local current_filter = anki_state.ui.current_filter
+	local query = current_filter and current_filter or "deck:*"
 	local notes_info = get_notes_for_query(query)
-	display_notes_in_buffer(notes_info, deck_name)
+	display_notes_in_buffer(notes_info, query)
 end
 
 --- Refreshes both the deck and note buffers.
@@ -85,7 +78,7 @@ end
 
 --- Shows all notes, ignoring any deck filter.
 function M.show_all_notes()
-	local notes_info = get_notes_for_query("")
+	local notes_info = get_notes_for_query("deck:*")
 	display_notes_in_buffer(notes_info, nil)
 end
 
@@ -96,7 +89,7 @@ function M.select_deck()
 	if deck_name then
 		local query = string.format('"deck:%s"', deck_name)
 		local notes_info = get_notes_for_query(query)
-		display_notes_in_buffer(notes_info, deck_name)
+		display_notes_in_buffer(notes_info, query)
 	end
 end
 
@@ -116,9 +109,10 @@ function M.open()
 	windows.setup_deck_keymaps(anki_state.ui.deck_buf_id)
 	windows.setup_note_keymaps(anki_state.ui.note_buf_id)
 
+	anki_state.ui.current_filter = "deck:*"
 	-- Initialize UI data
 	update_decks_view()
-	M.show_all_notes()
+	update_notes_view()
 
 	anki_state.ui.win_id = deck_win_id
 

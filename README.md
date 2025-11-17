@@ -21,6 +21,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   Deck Management: Create, rename, and delete Anki decks from within Neovim.
 -   Note Management: Create, edit, move and delete notes in any deck.
 -   Model Selection: Choose the note model when creating notes.
+-   Profile Switching: Switch between different Anki profiles without leaving Neovim.
 -   Open in Anki GUI: Jump directly to the selected deck or note in the Anki desktop application.
 -   Automatic UI Refresh: Deck and notes list refresh automatically after changes
 
@@ -82,6 +83,7 @@ require("anki").setup({
       rename_deck = "m",
       gui_deck = "o",
       refresh_decks = "r",
+      switch_profile = "p",
     },
     note = {
       show_help = "?",
@@ -131,6 +133,7 @@ These keymaps are configurable, see the `Configuration` section.
  | `m`    | Rename deck under the cursor            |
  | `o`    | Open the selected deck in the Anki GUI  |
  | `r`    | Refresh decks                           |
+ | `p`    | Switch Anki profile                     |
 
 ### Note Browser Keymaps
 

@@ -220,4 +220,35 @@ M.change_deck = function(cards, deck)
 	return anki_connect_invoke({ action = "changeDeck", params = { cards = cards, deck = deck } })
 end
 
+---
+--- Gets the list of available Anki profiles.
+---
+--- @return table|nil List of profile names, or nil on error.
+--- @error Throws if AnkiConnect fails.
+M.get_profiles = function()
+	return anki_connect_invoke({ action = "getProfiles" })
+end
+
+---
+--- Gets the name of the currently active Anki profile.
+---
+--- @return string|nil The active profile name, or nil on error.
+--- @error Throws if AnkiConnect fails.
+M.get_active_profile = function()
+	return anki_connect_invoke({ action = "getActiveProfile" })
+end
+
+---
+--- Loads (switches to) the specified Anki profile.
+---
+--- @param name string The name of the profile to load.
+--- @return boolean|nil True if successful, or nil on error.
+--- @error Throws if name is not a string or AnkiConnect fails.
+M.load_profile = function(name)
+	if type(name) ~= "string" then
+		error("Expected a string as profile name")
+	end
+	return anki_connect_invoke({ action = "loadProfile", params = { name = name } })
+end
+
 return M

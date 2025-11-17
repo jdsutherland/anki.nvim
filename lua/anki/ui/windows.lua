@@ -88,6 +88,7 @@ function M.setup_deck_keymaps(bufnr)
 		rename_deck = "<Cmd>lua require('anki.ui.deck_ops').rename_deck()<CR>",
 		gui_deck = "<Cmd>lua require('anki.ui.deck_ops').gui_deck()<CR>",
 		refresh_decks = "<Cmd>lua require('anki.ui.operations').refresh_decks()<CR>",
+		switch_profile = "<Cmd>lua require('anki.ui.profile_ops').switch_profile()<CR>",
 	}
 
 	for action, key in pairs(config.options.mappings.deck) do

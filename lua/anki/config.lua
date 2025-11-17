@@ -33,6 +33,7 @@ M.defaults = {
 			rename_deck = "m",
 			gui_deck = "o",
 			refresh_decks = "r",
+			switch_profile = "p",
 		},
 		note = {
 			show_help = "?",
