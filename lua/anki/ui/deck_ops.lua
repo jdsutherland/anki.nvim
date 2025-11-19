@@ -51,6 +51,9 @@ function M.delete_deck()
 	end
 
 	vim.ui.input({ prompt = "Are you sure you want to delete " .. #decks .. " deck ? (Y/n)" }, function(input)
+		if input == nil then
+			return
+		end
 		if input == "Y" or input == "y" then
 			local result = utils.safe_call(ankiconnect.delete_decks, decks)
 			if result == nil then

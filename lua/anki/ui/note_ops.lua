@@ -64,6 +64,9 @@ function M.edit_note()
 
 	if anki_state.current_note then
 		vim.ui.input({ prompt = "Save changes to current note before opening new one? (Y/n)" }, function(input)
+			if input == nil then
+				return
+			end
 			if input == "Y" or input == "y" then
 				api.send_note(anki_state.current_note.tags.bufnr)
 			end
@@ -166,6 +169,9 @@ function M.delete_note()
 	vim.ui.input(
 		{ prompt = "Are you sure you want to delete " .. tostring(#notes_ids) .. " note? (Y/n)" },
 		function(input)
+			if input == nil then
+				return
+			end
 			if input == "Y" or input == "y" then
 				local result = utils.safe_call(ankiconnect.delete_notes, notes_ids)
 				if result == nil then
