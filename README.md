@@ -27,7 +27,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 
 ## Dependencies
 
--   [lua-http](https://github.com/daurnimator/lua-http)
+-   [lua-http](https://github.com/daurnimator/lua-http) Install with luarocks
 -   [AnkiConnect](https://ankiweb.net/shared/info/2055492159) (Anki Add-on)
 
 ## Installation
@@ -37,15 +37,6 @@ Using `lazy.nvim`:
 ``` lua
 {
   "0fflineuser/anki.nvim",
-  dependencies = {
-    {
-      "vhyrro/luarocks.nvim",
-      priority = 1000,
-      opts = {
-        rocks = { "http" },
-      },
-    },
-  },
   opts = {
     -- Your custom configuration goes here
   },
