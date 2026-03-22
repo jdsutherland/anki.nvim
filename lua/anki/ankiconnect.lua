@@ -50,7 +50,7 @@ local anki_connect_invoke = function(options)
 
 	local headers_, stream = request:go(config.options.timeout)
 	if not headers_ then
-		vim.notify(vim.inspect(headers_))
+		-- vim.notify(vim.inspect(headers_))
 		error([[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please: 
     1. Make sure Anki is running 
     2. Verify AnkiConnect addon is installed in Anki

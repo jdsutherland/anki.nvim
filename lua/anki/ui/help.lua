@@ -1,9 +1,36 @@
 local M = {}
 
+--- Closes the help window if it is open.
+function M.close_help()
+	-- Iterate through all buffers to find the help buffer
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_valid(bufnr) then
+			local bufname = vim.api.nvim_buf_get_name(bufnr)
+			if bufname:find("Anki Help") then
+				-- Delete the buffer directly; window closes automatically
+				vim.api.nvim_buf_delete(bufnr, { force = true })
+				return
+			end
+		end
+	end
+end
+
 --- Shows the help window for the given context (decks, notes, or editor).
 -- @param context string|nil The context to show help for. Defaults to 'decks'.
 function M.show_help(context)
 	context = context or "decks"
+
+	-- Check if cursor is already on the help window
+	local current_bufnr = vim.api.nvim_win_get_buf(0)
+	local current_bufname = vim.api.nvim_buf_get_name(current_bufnr)
+	if current_bufname:find("Anki Help") then
+		M.close_help()
+		return
+	end
+
+	-- Close existing help window if open
+	M.close_help()
+
 	local help_lines = {}
 
 	if context == "decks" then
