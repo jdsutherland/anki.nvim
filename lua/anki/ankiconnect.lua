@@ -1,6 +1,5 @@
 local config = require("anki.config")
-local http_request = require("http.request")
-local http_headers = require("http.headers")
+local curl = require("plenary.curl")
 
 ---
 --- anki.ankiconnect
@@ -36,33 +35,22 @@ local anki_connect_invoke = function(options)
 
 	local post_data = vim.json.encode(data, { escape_slash = true })
 
-	local headers = http_headers.new()
-	headers:upsert(":method", "POST")
-	headers:upsert(":authority", "localhost")
-	headers:upsert(":scheme", "http")
-	headers:upsert(":path", "/")
-	headers:upsert("content-type", "application/json")
-	headers:upsert("content-length", tostring(#post_data))
+	local response = curl.post(config.options.url, {
+		body = post_data,
+		headers = {
+			content_type = "application/json",
+		},
+		timeout = config.options.timeout,
+	})
 
-	local request = http_request.new_from_uri(config.options.url)
-	request.headers = headers
-	request:set_body(post_data)
-
-	local headers_, stream = request:go(config.options.timeout)
-	if not headers_ then
-		-- vim.notify(vim.inspect(headers_))
-		error([[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please: 
-    1. Make sure Anki is running 
+	if response.exit ~= 0 then
+		error([[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please:
+    1. Make sure Anki is running
     2. Verify AnkiConnect addon is installed in Anki
     3. Check that the URL in the config is correct]])
 	end
 
-	local body = stream:get_body_as_string()
-	if not body then
-		error("Failed to get response body")
-	end
-
-	return vim.json.decode(body, { luanil = { objects = false, array = false } })
+	return vim.json.decode(response.body, { luanil = { objects = false, array = false } })
 end
 
 M.deck_names = function()
