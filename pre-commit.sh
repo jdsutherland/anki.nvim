@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Self-installing Git pre-commit hook
 HOOK_DIR=$(git rev-parse --git-dir)/hooks
