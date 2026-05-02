@@ -48,6 +48,7 @@
 ---@field delete_note string Delete note (default: `"<leader>r"`)
 ---@field kill_note string Close note buffer (default: `"<leader>k"`)
 ---@field show_help string Show Help (default: `"?"`)
+---@field attach_media string Attach media to note (default: `"<leader>m"`)
 
 local M = {}
 
@@ -88,6 +89,7 @@ M.defaults = {
 			delete_note = "<leader>r",
 			kill_note = "<leader>k",
 			show_help = "?",
+			attach_media = "<leader>m",
 		},
 	},
 }

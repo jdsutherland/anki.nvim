@@ -11,6 +11,7 @@ M.__index = M
 --- @field deck_name string
 --- @field model_name string
 --- @field id integer
+--- @field media table|nil Inline media attachments for addNote (picture/audio/video arrays).
 M.Note = M
 
 --- Creates a new Note class instance.
@@ -27,6 +28,7 @@ function M:new(o)
 	if o.tags and (not getmetatable(o.tags) or getmetatable(o.tags).__index ~= EditorContext) then
 		o.tags = EditorContext:new(o.tags)
 	end
+	o.media = o.media or { picture = {}, audio = {}, video = {} }
 	setmetatable(o, {
 		__index = self,
 		__tostring = function(tbl)
@@ -69,6 +71,20 @@ function M:get_content_from_buffers()
 	end
 
 	return content
+end
+
+--- Adds an inline media attachment to the note for use with addNote.
+--- @param media_type string One of "picture", "audio", or "video".
+--- @param entry table A media entry table. For pictures: { url/string/path, filename, fields }.
+---   For audio/video: { url/string/path, filename, fields }.
+function M:add_media(media_type, entry)
+	if media_type ~= "picture" and media_type ~= "audio" and media_type ~= "video" then
+		error("[anki.nvim][note] add_media: media_type must be 'picture', 'audio', or 'video'")
+	end
+	if type(entry) ~= "table" then
+		error("[anki.nvim][note] add_media: entry must be a table")
+	end
+	table.insert(self.media[media_type], entry)
 end
 
 return M

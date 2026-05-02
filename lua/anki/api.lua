@@ -74,6 +74,42 @@ local function notify_user(is_new)
 	notification.info(is_new and "Note added" or "Note updated")
 end
 
+--- Uploads all pending media attachments for a note via storeMediaFile.
+--- Used for update_note which doesn't support inline media params.
+-- @param note table The note object with media attachments.
+local function upload_note_media(note)
+	if not note.media then
+		return
+	end
+	for _, entry in ipairs(note.media.picture or {}) do
+		if entry.path then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { path = entry.path })
+		elseif entry.url then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { url = entry.url })
+		elseif entry.data then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { data = entry.data })
+		end
+	end
+	for _, entry in ipairs(note.media.audio or {}) do
+		if entry.path then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { path = entry.path })
+		elseif entry.url then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { url = entry.url })
+		elseif entry.data then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { data = entry.data })
+		end
+	end
+	for _, entry in ipairs(note.media.video or {}) do
+		if entry.path then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { path = entry.path })
+		elseif entry.url then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { url = entry.url })
+		elseif entry.data then
+			utils.safe_call(ankiconnect.store_media_file, entry.filename, { data = entry.data })
+		end
+	end
+end
+
 --- Sends the current note to Anki, adding or updating as needed.
 -- @param bufnr number The buffer number of the note.
 -- @param kill boolean|nil Whether to kill the note buffer after sending.
@@ -109,8 +145,24 @@ M.send_note = function(bufnr, kill)
 			return
 		end
 
-		local result_note_id =
-			utils.safe_call(ankiconnect.add_note, note_to_send.deck_name, note_to_send.model_name, fields, tags)
+		local has_media = #note_to_send.media.picture > 0
+			or #note_to_send.media.audio > 0
+			or #note_to_send.media.video > 0
+
+		local result_note_id
+		if has_media then
+			result_note_id = utils.safe_call(
+				ankiconnect.add_note,
+				note_to_send.deck_name,
+				note_to_send.model_name,
+				fields,
+				tags,
+				note_to_send.media
+			)
+		else
+			result_note_id =
+				utils.safe_call(ankiconnect.add_note, note_to_send.deck_name, note_to_send.model_name, fields, tags)
+		end
 
 		if not result_note_id then
 			notification.error("[anki.nvim][api] Failed to add note to Anki (no note ID returned)")
@@ -120,6 +172,9 @@ M.send_note = function(bufnr, kill)
 		note_to_send.id = result_note_id
 		handle_gui_browse(note_to_send, true, fields, tags)
 	else
+		-- For existing notes, upload any pending media via storeMediaFile
+		-- since updateNote doesn't support inline media params
+		upload_note_media(note_to_send)
 		handle_gui_browse(note_to_send, false, fields, tags)
 		utils.safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
 	end
@@ -206,7 +261,7 @@ M.delete_note = function(bufnr)
 		local query = string.format('"deck:%s"', note_to_delete.deck_name)
 		utils.safe_call(ankiconnect.gui_browse, query)
 	end
-	ui.refresh_all()
+	operations.refresh_all()
 end
 
 return M

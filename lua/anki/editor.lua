@@ -99,6 +99,7 @@ function M.display_note(note)
 			delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", bufnr),
 			kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", bufnr),
 			show_help = string.format("<Cmd>lua require('anki.ui.help').show_help('editor')<CR>"),
+			attach_media = string.format("<Cmd>lua require('anki.media').attach_media(%d)<CR>", bufnr),
 		}
 
 		for action, key in pairs(config.options.mappings.editor) do

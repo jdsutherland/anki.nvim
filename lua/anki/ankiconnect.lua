@@ -110,25 +110,37 @@ end
 --- @param tags table The note tags.
 --- @return table|nil The result from AnkiConnect, or nil on error.
 --- @error Throws if arguments are invalid or AnkiConnect fails.
-M.add_note = function(deckName, modelName, fields, tags)
+M.add_note = function(deckName, modelName, fields, tags, media)
+	local note = {
+		deckName = deckName,
+		modelName = modelName,
+		fields = fields,
+		options = {
+			allowDuplicate = false,
+			duplicateScope = "deck",
+			duplicateScopeOptions = {
+				deckName = nil,
+				checkChildren = false,
+				checkAllModels = false,
+			},
+		},
+		tags = tags,
+	}
+	if media then
+		if media.picture then
+			note.picture = media.picture
+		end
+		if media.audio then
+			note.audio = media.audio
+		end
+		if media.video then
+			note.video = media.video
+		end
+	end
 	return anki_connect_invoke({
 		action = "addNote",
 		params = {
-			note = {
-				deckName = deckName,
-				modelName = modelName,
-				fields = fields,
-				options = {
-					allowDuplicate = false,
-					duplicateScope = "deck",
-					duplicateScopeOptions = {
-						deckName = nil,
-						checkChildren = false,
-						checkAllModels = false,
-					},
-				},
-				tags = tags,
-			},
+			note = note,
 		},
 	})
 end
@@ -237,6 +249,41 @@ M.load_profile = function(name)
 		error("Expected a string as profile name")
 	end
 	return anki_connect_invoke({ action = "loadProfile", params = { name = name } })
+end
+
+M.store_media_file = function(filename, opts)
+	opts = opts or vim.empty_dict()
+	local params = { filename = filename }
+	if opts.data then
+		params.data = opts.data
+	elseif opts.path then
+		params.path = opts.path
+	elseif opts.url then
+		params.url = opts.url
+	end
+	if opts.delete_existing ~= nil then
+		params.deleteExisting = opts.delete_existing
+	end
+	return anki_connect_invoke({ action = "storeMediaFile", params = params })
+end
+
+M.retrieve_media_file = function(filename)
+	return anki_connect_invoke({ action = "retrieveMediaFile", params = { filename = filename } })
+end
+
+M.get_media_files_names = function(pattern)
+	return anki_connect_invoke({
+		action = "getMediaFilesNames",
+		params = { pattern = pattern or "*" },
+	})
+end
+
+M.get_media_dir_path = function()
+	return anki_connect_invoke({ action = "getMediaDirPath" })
+end
+
+M.delete_media_file = function(filename)
+	return anki_connect_invoke({ action = "deleteMediaFile", params = { filename = filename } })
 end
 
 return M

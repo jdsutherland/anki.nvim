@@ -70,6 +70,7 @@ function M.show_help(context)
 			"<leader>p - Pull note from Anki",
 			"<leader>r - Remove/Delete note from Anki",
 			"<leader>k - Kill/Close the note editor",
+			"<leader>m - Attach media (image/audio/video)",
 		}
 	end
 

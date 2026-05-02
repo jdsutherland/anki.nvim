@@ -6,6 +6,7 @@
 ---   • Browse decks and notes in a 3-pane split layout
 ---   • Create, edit, send, and delete notes without leaving Neovim
 ---   • Pull existing notes from Anki for editing
+---   • Attach media (images, audio, video) to notes from local files, URLs, clipboard, or Anki collection
 ---   • Deck management (create, rename, delete, switch profile)
 ---   • Integrates with AnkiConnect (requires Anki running locally)
 ---
@@ -18,6 +19,7 @@
 
 local config = require("anki.config")
 local operations = require("anki.ui.operations")
+local media = require("anki.media")
 
 local M = {}
 
@@ -44,6 +46,13 @@ local function setup_commands()
 		desc = "[Anki] Open the main Anki window",
 		nargs = 0,
 	})
+
+	vim.api.nvim_create_user_command("AnkiAttachMedia", function()
+		media.attach_media(vim.api.nvim_win_get_buf(0))
+	end, {
+		desc = "[Anki] Attach media to the current Anki note field",
+		nargs = 0,
+	})
 end
 
 --- Sets up the plugin with user configuration, keymaps, and commands.
@@ -61,5 +70,7 @@ function M.setup(opts)
 	setup_mappings()
 	setup_commands()
 end
+
+M.media = media
 
 return M
