@@ -28,26 +28,66 @@ function M.split(inputstr, sep)
 	return t
 end
 
---- Safely calls a function and handles errors, returning the result or nil.
--- @param fn function The function to call.
--- @param ... any Arguments to pass to the function.
--- @return any The result of the function, or nil on error.
-function M.safe_call(fn, ...)
+--- Asynchronous safe call wrapper for ankiconnect functions.
+--- Calls an async ankiconnect function and routes results to on_success or on_error callbacks.
+--- Error handling covers: transport failures, AnkiConnect API errors, and pcall-level crashes.
+---
+--- Usage:
+---   utils.async_safe_call(ankiconnect.deck_names, function(result, error)
+---     if error then ... end
+---     -- use result
+---   end)
+---
+--- Or with arguments:
+---   utils.async_safe_call(ankiconnect.find_notes, { query }, function(result, error)
+---     if error then ... end
+---     -- use result
+---   end)
+---
+---@param fn function An async ankiconnect function that takes a callback as its last argument.
+---@param args table|nil Arguments to pass to fn (before the callback). Nil if fn takes no args besides callback.
+---@param on_result function Callback receiving (result, error). result is nil on error, error is nil on success.
+function M.async_safe_call(fn, args, on_result)
 	if type(fn) ~= "function" then
-		error("[anki.nvim][utils] safe_call: fn must be a function")
+		error("[anki.nvim][utils] async_safe_call: fn must be a function")
 	end
-	local ok, result = pcall(fn, ...)
+	if type(on_result) ~= "function" then
+		error("[anki.nvim][utils] async_safe_call: on_result must be a function")
+	end
+
+	local ok, err = pcall(function()
+		local callback = function(result, error)
+			vim.schedule(function()
+				if error then
+					notification.error("[anki.nvim][utils] " .. tostring(error))
+					on_result(nil, error)
+				else
+					on_result(result, nil)
+				end
+			end)
+		end
+
+		if args == nil then
+			fn(callback)
+		else
+			if type(args) ~= "table" then
+				error("[anki.nvim][utils] async_safe_call: args must be a table or nil")
+			end
+			local call_args = {}
+			for _, arg in ipairs(args) do
+				table.insert(call_args, arg)
+			end
+			table.insert(call_args, callback)
+			fn(unpack(call_args))
+		end
+	end)
+
 	if not ok then
-		notification.error("[anki.nvim][utils] " .. tostring(result))
-		return nil
+		vim.schedule(function()
+			notification.error("[anki.nvim][utils] " .. tostring(err))
+			on_result(nil, err)
+		end)
 	end
-
-	if result.error ~= nil and result.error ~= vim.NIL then
-		notification.error("[anki.nvim][utils] " .. vim.inspect(result.error))
-		return nil
-	end
-
-	return result.result
 end
 
 --- Gets the visual or cursor line range for the current selection.

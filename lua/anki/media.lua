@@ -3,6 +3,7 @@
 ---
 --- Provides functions for uploading, referencing, and browsing media files
 --- (images, audio, video) in Anki via AnkiConnect's media API.
+--- All AnkiConnect calls are asynchronous using callbacks.
 ---
 local ankiconnect = require("anki.ankiconnect")
 local notification = require("anki.notification")
@@ -88,48 +89,66 @@ function M.basename(filepath)
 	return filepath:match("([^/\\]+)$") or filepath
 end
 
---- Uploads a local file to Anki's media collection using storeMediaFile.
+--- Uploads a local file to Anki's media collection using storeMediaFile asynchronously.
 --- Uses the `path` parameter for local files on the same machine as Anki.
 ---@param filepath string Absolute path to the local file.
 ---@param filename string|nil Optional filename to store as (defaults to basename).
----@return string|nil The stored filename, or nil on failure.
-function M.upload_local_file(filepath, filename)
+---@param on_result function Callback: on_result(stored_filename) or on_result(nil) on failure.
+function M.upload_local_file(filepath, filename, on_result)
 	filename = filename or M.basename(filepath)
-	local result = utils.safe_call(ankiconnect.store_media_file, filename, { path = filepath })
-	if result then
-		notification.info(string.format("Uploaded media: %s", filename))
-		return result
-	end
-	notification.error(string.format("Failed to upload media: %s", filepath))
-	return nil
+	utils.async_safe_call(ankiconnect.store_media_file, { filename, { path = filepath } }, function(result, error)
+		if result then
+			notification.info(string.format("Uploaded media: %s", filename))
+			if on_result then
+				on_result(result)
+			end
+		else
+			notification.error(string.format("Failed to upload media: %s", filepath))
+			if on_result then
+				on_result(nil)
+			end
+		end
+	end)
 end
 
---- Uploads a file from a URL to Anki's media collection using storeMediaFile.
+--- Uploads a file from a URL to Anki's media collection using storeMediaFile asynchronously.
 ---@param url string The URL to download the file from.
 ---@param filename string The filename to store in Anki's media collection.
----@return string|nil The stored filename, or nil on failure.
-function M.upload_from_url(url, filename)
-	local result = utils.safe_call(ankiconnect.store_media_file, filename, { url = url })
-	if result then
-		notification.info(string.format("Downloaded media: %s", filename))
-		return result
-	end
-	notification.error(string.format("Failed to download media from URL: %s", url))
-	return nil
+---@param on_result function Callback: on_result(stored_filename) or on_result(nil) on failure.
+function M.upload_from_url(url, filename, on_result)
+	utils.async_safe_call(ankiconnect.store_media_file, { filename, { url = url } }, function(result, error)
+		if result then
+			notification.info(string.format("Downloaded media: %s", filename))
+			if on_result then
+				on_result(result)
+			end
+		else
+			notification.error(string.format("Failed to download media from URL: %s", url))
+			if on_result then
+				on_result(nil)
+			end
+		end
+	end)
 end
 
---- Uploads base64-encoded data to Anki's media collection using storeMediaFile.
+--- Uploads base64-encoded data to Anki's media collection using storeMediaFile asynchronously.
 ---@param filename string The filename to store in Anki's media collection.
 ---@param data string The base64-encoded file content.
----@return string|nil The stored filename, or nil on failure.
-function M.upload_from_data(filename, data)
-	local result = utils.safe_call(ankiconnect.store_media_file, filename, { data = data })
-	if result then
-		notification.info(string.format("Uploaded media: %s", filename))
-		return result
-	end
-	notification.error(string.format("Failed to upload media from data: %s", filename))
-	return nil
+---@param on_result function Callback: on_result(stored_filename) or on_result(nil) on failure.
+function M.upload_from_data(filename, data, on_result)
+	utils.async_safe_call(ankiconnect.store_media_file, { filename, { data = data } }, function(result, error)
+		if result then
+			notification.info(string.format("Uploaded media: %s", filename))
+			if on_result then
+				on_result(result)
+			end
+		else
+			notification.error(string.format("Failed to upload media from data: %s", filename))
+			if on_result then
+				on_result(nil)
+			end
+		end
+	end)
 end
 
 --- Reads a local file and returns its base64-encoded content.
@@ -205,10 +224,13 @@ function M._attach_local_file(bufnr)
 			return
 		end
 		local filename = M.basename(filepath)
-		local result = M.upload_local_file(filepath, filename)
-		if result then
-			M.insert_at_cursor(bufnr, M.media_reference(result))
-		end
+		M.upload_local_file(filepath, filename, function(result)
+			if result then
+				vim.schedule(function()
+					M.insert_at_cursor(bufnr, M.media_reference(result))
+				end)
+			end
+		end)
 	end)
 end
 
@@ -224,10 +246,13 @@ function M._attach_url(bufnr)
 			if not filename or filename == "" then
 				return
 			end
-			local result = M.upload_from_url(url, filename)
-			if result then
-				M.insert_at_cursor(bufnr, M.media_reference(result))
-			end
+			M.upload_from_url(url, filename, function(result)
+				if result then
+					vim.schedule(function()
+						M.insert_at_cursor(bufnr, M.media_reference(result))
+					end)
+				end
+			end)
 		end)
 	end)
 end
@@ -248,7 +273,9 @@ function M._attach_clipboard(bufnr)
 		vim.fn.system(string.format("wl-paste --type image/png > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
 		success = vim.v.shell_error == 0
 	elseif has_xclip then
-		vim.fn.system(string.format("xclip -selection clipboard -t image/png -o > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
+		vim.fn.system(
+			string.format("xclip -selection clipboard -t image/png -o > %s 2>/dev/null", vim.fn.shellescape(tmp_file))
+		)
 		success = vim.v.shell_error == 0
 	elseif has_xsel then
 		vim.fn.system(string.format("xsel --clipboard --input -o > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
@@ -292,34 +319,40 @@ function M._attach_clipboard(bufnr)
 		return
 	end
 
-	local result = M.upload_from_data(filename, data)
-	if result then
-		M.insert_at_cursor(bufnr, M.media_reference(result))
-	end
+	M.upload_from_data(filename, data, function(result)
+		if result then
+			vim.schedule(function()
+				M.insert_at_cursor(bufnr, M.media_reference(result))
+			end)
+		end
+	end)
 end
 
 --- Handles browsing and inserting existing media from Anki's collection.
 ---@param bufnr number The buffer to insert the reference into.
 function M._attach_browse(bufnr)
-	local media_files = utils.safe_call(ankiconnect.get_media_files_names)
-	if not media_files then
-		notification.error("[anki.nvim][media] Failed to list Anki media files")
-		return
-	end
-	if type(media_files) ~= "table" or #media_files == 0 then
-		notification.info("[anki.nvim][media] No media files found in Anki collection")
-		return
-	end
-
-	table.sort(media_files)
-
-	vim.ui.select(media_files, {
-		prompt = "Select media file:",
-	}, function(filename)
-		if not filename then
+	utils.async_safe_call(ankiconnect.get_media_files_names, nil, function(media_files, error)
+		if error or not media_files then
+			notification.error("[anki.nvim][media] Failed to list Anki media files")
 			return
 		end
-		M.insert_at_cursor(bufnr, M.media_reference(filename))
+		if type(media_files) ~= "table" or #media_files == 0 then
+			notification.info("[anki.nvim][media] No media files found in Anki collection")
+			return
+		end
+
+		table.sort(media_files)
+
+		vim.ui.select(media_files, {
+			prompt = "Select media file:",
+		}, function(filename)
+			if not filename then
+				return
+			end
+			vim.schedule(function()
+				M.insert_at_cursor(bufnr, M.media_reference(filename))
+			end)
+		end)
 	end)
 end
 

@@ -25,27 +25,32 @@ function M.focus_existing_window()
 	return false
 end
 
---- Checks and requests AnkiConnect permissions, displaying errors if denied.
+--- Checks and requests AnkiConnect permissions asynchronously, displaying errors if denied.
+--- Calls on_result(true) if permission is granted, on_result(false) otherwise.
 -- @param ankiconnect table The AnkiConnect module or API object.
--- @return boolean True if permission is granted, false otherwise.
-function M.check_anki_permissions(ankiconnect)
-	local permission_response = utils.safe_call(ankiconnect.request_permission)
-	if not permission_response then
-		return false
-	end
+-- @param on_result function Callback: on_result(granted)
+function M.check_anki_permissions(ankiconnect_module, on_result)
+	utils.async_safe_call(ankiconnect_module.request_permission, nil, function(permission_response, error)
+		if error or not permission_response then
+			on_result(false)
+			return
+		end
 
-	if permission_response.permission == "denied" then
-		notification.error([[[anki.nvim][windows] AnkiConnect permission denied. Please:
+		vim.schedule(function()
+			if permission_response.permission == "denied" then
+				notification.error([[[anki.nvim][windows] AnkiConnect permission denied. Please:
 		1. Check the Anki popup dialog and grant permission
 		2. Or add your origin to trusted origins in AnkiConnect config
-    ]])
-		return false
-	elseif permission_response.permission ~= "granted" then
-		notification.error("[anki.nvim][windows] Unexpected permission response from AnkiConnect")
-		return false
-	end
-
-	return true
+		    ]])
+				on_result(false)
+			elseif permission_response.permission ~= "granted" then
+				notification.error("[anki.nvim][windows] Unexpected permission response from AnkiConnect")
+				on_result(false)
+			else
+				on_result(true)
+			end
+		end)
+	end)
 end
 
 --- Creates the Anki UI layout with deck and note buffers in new windows.

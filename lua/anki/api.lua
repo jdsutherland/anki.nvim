@@ -2,13 +2,7 @@
 --- anki.api
 ---
 --- Provides functions to send, pull, and delete notes in Anki via AnkiConnect.
---- Handles communication between the Neovim UI and the AnkiConnect API.
----
----
---- anki.api
----
---- Provides functions to send, pull, and delete notes in Anki via AnkiConnect.
---- Handles communication between the Neovim UI and the AnkiConnect API.
+--- All AnkiConnect calls are asynchronous using callbacks to avoid blocking Neovim's UI.
 ---
 local config = require("anki.config")
 local ankiconnect = require("anki.ankiconnect")
@@ -22,17 +16,20 @@ local M = {}
 
 --- Checks if a note with the given ID exists in Anki.
 -- @param note_id any The note ID to check.
--- @return boolean True if the note exists, false otherwise.
-local function validate_note_exists(note_id)
+-- @param on_result function Callback: on_result(exists)
+local function validate_note_exists(note_id, on_result)
 	if not note_id then
-		return false
+		on_result(false)
+		return
 	end
 	local query = string.format("nid:%s", note_id)
-	local result_notes = utils.safe_call(ankiconnect.find_notes, query)
-	if not result_notes then
-		return false
-	end
-	return #result_notes > 0
+	utils.async_safe_call(ankiconnect.find_notes, { query }, function(result, error)
+		if error or not result then
+			on_result(false)
+			return
+		end
+		on_result(#result > 0)
+	end)
 end
 
 --- Checks if a note can be added to Anki with the given parameters.
@@ -40,11 +37,19 @@ end
 -- @param model_name string The model name.
 -- @param fields table The note fields.
 -- @param tags table The note tags.
--- @return boolean True if the note can be added, false otherwise.
-local function can_add_note(deck_name, model_name, fields, tags)
-	local validation_result =
-		utils.safe_call(ankiconnect.can_add_notes_with_error_details, deck_name, model_name, fields, tags)
-	return validation_result and validation_result[1] and validation_result[1].canAdd
+-- @param on_result function Callback: on_result(can_add)
+local function can_add_note(deck_name, model_name, fields, tags, on_result)
+	utils.async_safe_call(
+		ankiconnect.can_add_notes_with_error_details,
+		{ deck_name, model_name, fields, tags },
+		function(result, error)
+			if error or not result then
+				on_result(false)
+				return
+			end
+			on_result(result[1] and result[1].canAdd)
+		end
+	)
 end
 
 --- Handles opening the Anki GUI browser for a note, optionally updating it.
@@ -52,19 +57,33 @@ end
 -- @param is_new boolean Whether the note is new.
 -- @param fields table The note fields.
 -- @param tags table The note tags.
-local function handle_gui_browse(note, is_new, fields, tags)
+-- @param on_done function Callback called when done (no arguments).
+local function handle_gui_browse(note, is_new, fields, tags, on_done)
 	if not config.options.gui_browse_enabled then
+		if on_done then
+			on_done()
+		end
 		return
 	end
 
 	if is_new then
 		local query = string.format('"deck:%s" nid:%s', utils.escape_search_query(note.deck_name), note.id)
-		utils.safe_call(ankiconnect.gui_browse, query)
+		utils.async_safe_call(ankiconnect.gui_browse, { query }, function(_, _)
+			if on_done then
+				on_done()
+			end
+		end)
 	else
-		utils.safe_call(ankiconnect.gui_browse, "nid:1")
-		utils.safe_call(ankiconnect.update_note, note.id, fields, tags)
-		local query = string.format('"deck:%s" nid:%s', utils.escape_search_query(note.deck_name), note.id)
-		utils.safe_call(ankiconnect.gui_browse, query)
+		utils.async_safe_call(ankiconnect.gui_browse, { "nid:1" }, function(_, _)
+			utils.async_safe_call(ankiconnect.update_note, { note.id, fields, tags }, function(_, _)
+				local query2 = string.format('"deck:%s" nid:%s', utils.escape_search_query(note.deck_name), note.id)
+				utils.async_safe_call(ankiconnect.gui_browse, { query2 }, function(_, _)
+					if on_done then
+						on_done()
+					end
+				end)
+			end)
+		end)
 	end
 end
 
@@ -74,27 +93,66 @@ local function notify_user(is_new)
 	notification.info(is_new and "Note added" or "Note updated")
 end
 
-local function upload_media_entry(filename, entry)
+local function upload_media_entry(filename, entry, on_done)
 	if entry.path then
-		utils.safe_call(ankiconnect.store_media_file, filename, { path = entry.path })
+		utils.async_safe_call(ankiconnect.store_media_file, { filename, { path = entry.path } }, function(_, _)
+			if on_done then
+				on_done()
+			end
+		end)
 	elseif entry.url then
-		utils.safe_call(ankiconnect.store_media_file, filename, { url = entry.url })
+		utils.async_safe_call(ankiconnect.store_media_file, { filename, { url = entry.url } }, function(_, _)
+			if on_done then
+				on_done()
+			end
+		end)
 	elseif entry.data then
-		utils.safe_call(ankiconnect.store_media_file, filename, { data = entry.data })
+		utils.async_safe_call(ankiconnect.store_media_file, { filename, { data = entry.data } }, function(_, _)
+			if on_done then
+				on_done()
+			end
+		end)
+	else
+		if on_done then
+			on_done()
+		end
 	end
 end
 
 --- Uploads all pending media attachments for a note via storeMediaFile.
---- Used for update_note which doesn't support inline media params.
+--- Calls on_done when all uploads are complete.
 -- @param note table The note object with media attachments.
-local function upload_note_media(note)
+-- @param on_done function Callback called when all media uploads are complete.
+local function upload_note_media(note, on_done)
 	if not note.media then
+		if on_done then
+			on_done()
+		end
 		return
 	end
+
+	local uploads = {}
 	for _, media_type in ipairs({ "picture", "audio", "video" }) do
 		for _, entry in ipairs(note.media[media_type] or {}) do
-			upload_media_entry(entry.filename, entry)
+			table.insert(uploads, { filename = entry.filename, entry = entry })
 		end
+	end
+
+	if #uploads == 0 then
+		if on_done then
+			on_done()
+		end
+		return
+	end
+
+	local completed = 0
+	for _, upload in ipairs(uploads) do
+		upload_media_entry(upload.filename, upload.entry, function()
+			completed = completed + 1
+			if completed == #uploads and on_done then
+				on_done()
+			end
+		end)
 	end
 end
 
@@ -120,14 +178,31 @@ M.send_note = function(bufnr, kill)
 	local tags = content.tags
 	local is_new_note = note_to_send.id == nil
 
-	if note_to_send.id and not validate_note_exists(note_to_send.id) then
-		note_to_send.id = nil
-		is_new_note = true
+	local function do_send()
+		if note_to_send.id then
+			validate_note_exists(note_to_send.id, function(exists)
+				if not exists then
+					note_to_send.id = nil
+					is_new_note = true
+				end
+				process_send()
+			end)
+		else
+			process_send()
+		end
 	end
 
-	local can_add = can_add_note(note_to_send.deck_name, note_to_send.model_name, fields, tags)
+	local function process_send()
+		can_add_note(note_to_send.deck_name, note_to_send.model_name, fields, tags, function(can_add)
+			if is_new_note then
+				send_new_note(can_add)
+			else
+				send_existing_note()
+			end
+		end)
+	end
 
-	if is_new_note then
+	local function send_new_note(can_add)
 		if not can_add then
 			notification.error("[anki.nvim][api] The note already exists but its ID is unknown by anki.nvim")
 			return
@@ -137,48 +212,61 @@ M.send_note = function(bufnr, kill)
 			or #note_to_send.media.audio > 0
 			or #note_to_send.media.video > 0
 
-		local result_note_id
+		local on_add_result = function(result_note_id, error)
+			if error or not result_note_id then
+				notification.error("[anki.nvim][api] Failed to add note to Anki (no note ID returned)")
+				return
+			end
+
+			note_to_send.id = result_note_id
+			handle_gui_browse(note_to_send, true, fields, tags, function()
+				cleanup_and_notify()
+			end)
+		end
+
 		if has_media then
-			result_note_id = utils.safe_call(
+			utils.async_safe_call(
 				ankiconnect.add_note,
-				note_to_send.deck_name,
-				note_to_send.model_name,
-				fields,
-				tags,
-				note_to_send.media
+				{ note_to_send.deck_name, note_to_send.model_name, fields, tags, note_to_send.media },
+				on_add_result
 			)
 		else
-			result_note_id =
-				utils.safe_call(ankiconnect.add_note, note_to_send.deck_name, note_to_send.model_name, fields, tags)
-		end
-
-		if not result_note_id then
-			notification.error("[anki.nvim][api] Failed to add note to Anki (no note ID returned)")
-			return
-		end
-
-		note_to_send.id = result_note_id
-		handle_gui_browse(note_to_send, true, fields, tags)
-	else
-		-- For existing notes, upload any pending media via storeMediaFile
-		-- since updateNote doesn't support inline media params
-		upload_note_media(note_to_send)
-		handle_gui_browse(note_to_send, false, fields, tags)
-		local update_result = utils.safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
-		if not update_result then
-			notification.error("[anki.nvim][api] Failed to update note")
-			return
+			utils.async_safe_call(
+				ankiconnect.add_note,
+				{ note_to_send.deck_name, note_to_send.model_name, fields, tags },
+				on_add_result
+			)
 		end
 	end
 
-	-- Cleanup if requested
-	if kill then
-		editor.delete_note_buffers(note_to_send)
-		anki_state.current_note = nil
+	local function send_existing_note()
+		upload_note_media(note_to_send, function()
+			handle_gui_browse(note_to_send, false, fields, tags, function()
+				utils.async_safe_call(
+					ankiconnect.update_note,
+					{ note_to_send.id, fields, tags },
+					function(result, error)
+						if error or not result then
+							notification.error("[anki.nvim][api] Failed to update note")
+							return
+						end
+						cleanup_and_notify()
+					end
+				)
+			end)
+		end)
 	end
 
-	notify_user(is_new_note)
-	operations.refresh_all()
+	local function cleanup_and_notify()
+		if kill then
+			editor.delete_note_buffers(note_to_send)
+			anki_state.current_note = nil
+		end
+		notify_user(is_new_note)
+		operations.refresh_all()
+	end
+
+	do_send()
 end
 
 --- Pulls the latest content for the current note from Anki into the buffers.
@@ -199,32 +287,35 @@ M.pull_note = function(bufnr)
 		return
 	end
 
-	local notes_data = utils.safe_call(ankiconnect.notes_info, { note_to_pull.id })
-	if not notes_data then
-		notification.error("[anki.nvim][api] Failed to fetch note info from Anki")
-		return
-	end
-	local first_note = notes_data[1]
-	if not first_note then
-		notification.error("[anki.nvim][api] Note not found in Anki")
-		return
-	end
-
-	vim.api.nvim_buf_set_lines(note_to_pull.tags.bufnr, 0, -1, false, first_note.tags)
-
-	for key, field in pairs(first_note.fields) do
-		local field_found_in_note = note_to_pull:find_field_by_name(key)
-		if field_found_in_note then
-			vim.api.nvim_buf_set_lines(
-				note_to_pull.fields[field_found_in_note].editor_context.bufnr,
-				0,
-				-1,
-				false,
-				utils.split(field.value, "\n")
-			)
+	utils.async_safe_call(ankiconnect.notes_info, { { note_to_pull.id } }, function(notes_data, error)
+		if error or not notes_data then
+			notification.error("[anki.nvim][api] Failed to fetch note info from Anki")
+			return
 		end
-	end
-	notification.info("[anki.nvim][api] Note pulled from Anki")
+		local first_note = notes_data[1]
+		if not first_note then
+			notification.error("[anki.nvim][api] Note not found in Anki")
+			return
+		end
+
+		vim.schedule(function()
+			vim.api.nvim_buf_set_lines(note_to_pull.tags.bufnr, 0, -1, false, first_note.tags)
+
+			for key, field in pairs(first_note.fields) do
+				local field_found_in_note = note_to_pull:find_field_by_name(key)
+				if field_found_in_note then
+					vim.api.nvim_buf_set_lines(
+						note_to_pull.fields[field_found_in_note].editor_context.bufnr,
+						0,
+						-1,
+						false,
+						utils.split(field.value, "\n")
+					)
+				end
+			end
+			notification.info("[anki.nvim][api] Note pulled from Anki")
+		end)
+	end)
 end
 
 --- Deletes the current note from Anki and updates the UI.
@@ -245,19 +336,23 @@ M.delete_note = function(bufnr)
 		return
 	end
 
-	local result = utils.safe_call(ankiconnect.delete_notes, { note_to_delete.id })
-	if result == nil then
-		notification.error("[anki.nvim][api] Failed to delete note from Anki")
-		return
-	end
-	note_to_delete.id = nil
-	notification.info("[anki.nvim][api] Note deleted")
+	utils.async_safe_call(ankiconnect.delete_notes, { { note_to_delete.id } }, function(result, error)
+		if error or result == nil then
+			notification.error("[anki.nvim][api] Failed to delete note from Anki")
+			return
+		end
+		note_to_delete.id = nil
+		notification.info("[anki.nvim][api] Note deleted")
 
-	if config.options.gui_browse_enabled then
-		local query = string.format('"deck:%s"', utils.escape_search_query(note_to_delete.deck_name))
-		utils.safe_call(ankiconnect.gui_browse, query)
-	end
-	operations.refresh_all()
+		if config.options.gui_browse_enabled then
+			local query = string.format('"deck:%s"', utils.escape_search_query(note_to_delete.deck_name))
+			utils.async_safe_call(ankiconnect.gui_browse, { query }, function(_, _)
+				operations.refresh_all()
+			end)
+		else
+			operations.refresh_all()
+		end
+	end)
 end
 
 return M

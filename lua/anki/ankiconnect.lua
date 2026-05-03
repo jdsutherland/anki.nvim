@@ -5,13 +5,21 @@ local curl = require("plenary.curl")
 --- anki.ankiconnect
 ---
 --- Provides low-level functions to communicate with the AnkiConnect API via HTTP.
+--- All functions are asynchronous and use callbacks to avoid blocking Neovim's UI.
 --- Wraps all AnkiConnect actions (decks, notes, models, etc.) for use by higher-level modules.
+---
+--- Callback signature: on_result(result, error)
+---   - on success: on_result(result_data, nil)
+---   - on failure: on_result(nil, error_message_string)
 ---
 local M = {}
 
-local anki_connect_invoke = function(options)
+local function anki_connect_invoke_async(options, on_result)
 	if type(options) ~= "table" then
 		error("[anki.nvim][ankiconnect] Expected a table as argument")
+	end
+	if type(on_result) ~= "function" then
+		error("[anki.nvim][ankiconnect] Expected a function as callback")
 	end
 	local action = options.action
 	local version = options.version or 6
@@ -35,82 +43,96 @@ local anki_connect_invoke = function(options)
 
 	local post_data = vim.json.encode(data, { escape_slash = true })
 
-	local response = curl.post(config.options.url, {
+	curl.post(config.options.url, {
 		body = post_data,
 		headers = {
 			content_type = "application/json",
 		},
 		timeout = config.options.timeout,
-	})
-
-	if response.exit ~= 0 then
-		error([[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please:
+		callback = function(response)
+			if response.exit ~= 0 then
+				on_result(
+					nil,
+					[=[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please:
     1. Make sure Anki is running
     2. Verify AnkiConnect addon is installed in Anki
-    3. Check that the URL in the config is correct]])
-	end
+    3. Check that the URL in the config is correct]=]
+				)
+				return
+			end
 
-	return vim.json.decode(response.body, { luanil = { objects = false, array = false } })
+			local ok, decoded = pcall(vim.json.decode, response.body, { luanil = { objects = false, array = false } })
+			if not ok then
+				on_result(nil, "[anki.nvim][ankiconnect] Failed to decode JSON response: " .. tostring(decoded))
+				return
+			end
+
+			if decoded.error ~= nil and decoded.error ~= vim.NIL then
+				on_result(nil, vim.inspect(decoded.error))
+				return
+			end
+
+			on_result(decoded.result, nil)
+		end,
+	})
 end
 
-M.deck_names = function()
-	return anki_connect_invoke({ action = "deckNames" })
+M.deck_names = function(on_result)
+	anki_connect_invoke_async({ action = "deckNames" }, on_result)
 end
 
-M.version = function()
-	return anki_connect_invoke({ action = "version" })
+M.version = function(on_result)
+	anki_connect_invoke_async({ action = "version" }, on_result)
 end
 
-M.request_permission = function()
-	return anki_connect_invoke({ action = "requestPermission" })
+M.request_permission = function(on_result)
+	anki_connect_invoke_async({ action = "requestPermission" }, on_result)
 end
 
 ---
 --- Finds notes in Anki matching the given query string.
 ---
---- @param query string The search query.
---- @return table|nil List of note IDs, or nil on error.
---- @error Throws if query is not a string or AnkiConnect fails.
-M.find_notes = function(query)
-	return anki_connect_invoke({ action = "findNotes", params = { query = query } })
+---@param query string The search query.
+---@param on_result function Callback: on_result(note_ids, error)
+M.find_notes = function(query, on_result)
+	anki_connect_invoke_async({ action = "findNotes", params = { query = query } }, on_result)
 end
 
 ---
 --- Gets detailed information for a list of note IDs.
 ---
---- @param notes table List of note IDs.
---- @return table|nil List of note info tables, or nil on error.
---- @error Throws if notes is not a table or AnkiConnect fails.
-M.notes_info = function(notes)
-	return anki_connect_invoke({ action = "notesInfo", params = { notes = notes } })
+---@param notes table List of note IDs.
+---@param on_result function Callback: on_result(notes_info, error)
+M.notes_info = function(notes, on_result)
+	anki_connect_invoke_async({ action = "notesInfo", params = { notes = notes } }, on_result)
 end
 
-M.create_deck = function(deck)
-	return anki_connect_invoke({ action = "createDeck", params = { deck = deck } })
+M.create_deck = function(deck, on_result)
+	anki_connect_invoke_async({ action = "createDeck", params = { deck = deck } }, on_result)
 end
 
-M.model_names = function()
-	return anki_connect_invoke({ action = "modelNames" })
+M.model_names = function(on_result)
+	anki_connect_invoke_async({ action = "modelNames" }, on_result)
 end
 
-M.get_tags = function()
-	return anki_connect_invoke({ action = "getTags" })
+M.get_tags = function(on_result)
+	anki_connect_invoke_async({ action = "getTags" }, on_result)
 end
 
-M.model_field_names = function(modelName)
-	return anki_connect_invoke({ action = "modelFieldNames", params = { modelName = modelName } })
+M.model_field_names = function(modelName, on_result)
+	anki_connect_invoke_async({ action = "modelFieldNames", params = { modelName = modelName } }, on_result)
 end
 
 ---
 --- Adds a note to Anki via AnkiConnect.
 ---
---- @param deckName string The name of the deck.
---- @param modelName string The name of the model.
---- @param fields table The note fields.
---- @param tags table The note tags.
---- @return table|nil The result from AnkiConnect, or nil on error.
---- @error Throws if arguments are invalid or AnkiConnect fails.
-M.add_note = function(deckName, modelName, fields, tags, media)
+---@param deckName string The name of the deck.
+---@param modelName string The name of the model.
+---@param fields table The note fields.
+---@param tags table The note tags.
+---@param media table|nil Optional media attachments.
+---@param on_result function Callback: on_result(note_id, error)
+M.add_note = function(deckName, modelName, fields, tags, media, on_result)
 	local note = {
 		deckName = deckName,
 		modelName = modelName,
@@ -137,16 +159,16 @@ M.add_note = function(deckName, modelName, fields, tags, media)
 			note.video = media.video
 		end
 	end
-	return anki_connect_invoke({
+	anki_connect_invoke_async({
 		action = "addNote",
 		params = {
 			note = note,
 		},
-	})
+	}, on_result)
 end
 
-M.can_add_notes_with_error_details = function(deckName, modelName, fields, tags)
-	return anki_connect_invoke({
+M.can_add_notes_with_error_details = function(deckName, modelName, fields, tags, on_result)
+	anki_connect_invoke_async({
 		action = "canAddNotesWithErrorDetail",
 		params = {
 			notes = { {
@@ -156,11 +178,11 @@ M.can_add_notes_with_error_details = function(deckName, modelName, fields, tags)
 				tags = tags,
 			} },
 		},
-	})
+	}, on_result)
 end
 
-M.update_note = function(id, fields, tags)
-	return anki_connect_invoke({
+M.update_note = function(id, fields, tags, on_result)
+	anki_connect_invoke_async({
 		action = "updateNote",
 		params = {
 			note = {
@@ -169,89 +191,81 @@ M.update_note = function(id, fields, tags)
 				tags = tags,
 			},
 		},
-	})
+	}, on_result)
 end
 
 ---
 --- Deletes notes in Anki by note ID.
 ---
---- @param notes table List of note IDs to delete.
---- @return table|nil The result from AnkiConnect, or nil on error.
---- @error Throws if notes is not a table or AnkiConnect fails.
-M.delete_notes = function(notes)
+---@param notes table List of note IDs to delete.
+---@param on_result function Callback: on_result(result, error)
+M.delete_notes = function(notes, on_result)
 	if type(notes) ~= "table" then
 		error("[anki.nvim][ankiconnect] Expected a table as argument")
 	end
-	return anki_connect_invoke({
+	anki_connect_invoke_async({
 		action = "deleteNotes",
 		params = {
 			notes = notes,
 		},
-	})
+	}, on_result)
 end
 
-M.delete_decks = function(decks)
+M.delete_decks = function(decks, on_result)
 	if type(decks) ~= "table" then
 		error("[anki.nvim][ankiconnect] Expected a table as argument")
 	end
-	return anki_connect_invoke({
+	anki_connect_invoke_async({
 		action = "deleteDecks",
 		params = {
 			decks = decks,
 			cardsToo = true,
 		},
-	})
+	}, on_result)
 end
 
-M.gui_browse = function(query)
-	return anki_connect_invoke({
+M.gui_browse = function(query, on_result)
+	anki_connect_invoke_async({
 		action = "guiBrowse",
 		params = {
 			query = query,
-			-- reorderCards = {
-			-- 	order = "descending",
-			-- 	columnId = "noteCrt",
-			-- },
 		},
-	})
+	}, on_result)
 end
 
-M.change_deck = function(cards, deck)
-	return anki_connect_invoke({ action = "changeDeck", params = { cards = cards, deck = deck } })
+M.change_deck = function(cards, deck, on_result)
+	anki_connect_invoke_async({ action = "changeDeck", params = { cards = cards, deck = deck } }, on_result)
 end
 
 ---
 --- Gets the list of available Anki profiles.
 ---
---- @return table|nil List of profile names, or nil on error.
---- @error Throws if AnkiConnect fails.
-M.get_profiles = function()
-	return anki_connect_invoke({ action = "getProfiles" })
+---@param on_result function Callback: on_result(profiles, error)
+M.get_profiles = function(on_result)
+	anki_connect_invoke_async({ action = "getProfiles" }, on_result)
 end
 
 ---
 --- Gets the name of the currently active Anki profile.
 ---
---- @return string|nil The active profile name, or nil on error.
---- @error Throws if AnkiConnect fails.
-M.get_active_profile = function()
-	return anki_connect_invoke({ action = "getActiveProfile" })
+---@param on_result function Callback: on_result(profile_name, error)
+M.get_active_profile = function(on_result)
+	anki_connect_invoke_async({ action = "getActiveProfile" }, on_result)
 end
 
 ---
 --- Loads (switches to) the specified Anki profile.
 ---
---- @param name string The name of the profile to load.
---- @return boolean|nil True if successful, or nil on error.
---- @error Throws if name is not a string or AnkiConnect fails.
-M.load_profile = function(name)
+---@param name string The name of the profile to load.
+---@param on_result function Callback: on_result(result, error)
+M.load_profile = function(name, on_result)
 	if type(name) ~= "string" then
 		error("[anki.nvim][ankiconnect] Expected a string as profile name")
 	end
-	return anki_connect_invoke({ action = "loadProfile", params = { name = name } })
+	anki_connect_invoke_async({ action = "loadProfile", params = { name = name } }, on_result)
 end
 
-M.store_media_file = function(filename, opts)
+M.store_media_file = function(filename, opts, on_result)
 	opts = opts or vim.empty_dict()
 	local params = { filename = filename }
 	if opts.data then
@@ -264,26 +278,26 @@ M.store_media_file = function(filename, opts)
 	if opts.delete_existing ~= nil then
 		params.deleteExisting = opts.delete_existing
 	end
-	return anki_connect_invoke({ action = "storeMediaFile", params = params })
+	anki_connect_invoke_async({ action = "storeMediaFile", params = params }, on_result)
 end
 
-M.retrieve_media_file = function(filename)
-	return anki_connect_invoke({ action = "retrieveMediaFile", params = { filename = filename } })
+M.retrieve_media_file = function(filename, on_result)
+	anki_connect_invoke_async({ action = "retrieveMediaFile", params = { filename = filename } }, on_result)
 end
 
-M.get_media_files_names = function(pattern)
-	return anki_connect_invoke({
+M.get_media_files_names = function(pattern, on_result)
+	anki_connect_invoke_async({
 		action = "getMediaFilesNames",
 		params = { pattern = pattern or "*" },
-	})
+	}, on_result)
 end
 
-M.get_media_dir_path = function()
-	return anki_connect_invoke({ action = "getMediaDirPath" })
+M.get_media_dir_path = function(on_result)
+	anki_connect_invoke_async({ action = "getMediaDirPath" }, on_result)
 end
 
-M.delete_media_file = function(filename)
-	return anki_connect_invoke({ action = "deleteMediaFile", params = { filename = filename } })
+M.delete_media_file = function(filename, on_result)
+	anki_connect_invoke_async({ action = "deleteMediaFile", params = { filename = filename } }, on_result)
 end
 
 return M

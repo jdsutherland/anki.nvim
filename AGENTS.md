@@ -90,7 +90,7 @@ end
 
 ### Naming Conventions
 
-- **Variables/functions:** `snake_case` (e.g., `safe_call`, `delete_note`, `deck_name`)
+- **Variables/functions:** `snake_case` (e.g., `async_safe_call`, `delete_note`, `deck_name`)
 - **Classes/constructors:** `PascalCase` (e.g., `EditorContext`, `Field`, `Note`, `UI`)
 - **Module-local helpers:** `snake_case` (e.g., `format_note_display`)
 - **Constants/config:** `snake_case` (e.g., `M.defaults`, `M.options`)
@@ -109,7 +109,7 @@ Three patterns, used in specific contexts:
    assert(o.deck_name, "Note requires a 'deck_name'")
    ```
 
-3. **`safe_call()`** — All AnkiConnect API calls. Wraps `pcall`, checks response for errors. Returns `result` on success or `nil` on failure with `notification.error()`.
+3. **`async_safe_call()`** — All AnkiConnect API calls. Asynchronous wrapper that calls an ankiconnect function with callback-based error handling. Checks response for errors and reports via `notification.error()`. Callbacks are scheduled via `vim.schedule` to run on the main event loop.
 
 Always prefix error messages with `[anki.nvim][<module>]` and include the function name.
 
@@ -133,10 +133,11 @@ notification.info("message")   -- Info
 ### AnkiConnect Communication
 
 All calls go through `ankiconnect.lua`:
-- Synchronous HTTP POST via `plenary.curl` to `http://localhost:8765`
+- **Asynchronous** HTTP POST via `plenary.curl` (with `callback` parameter) to `http://localhost:8765`
 - Request format: `{ action = ..., version = 6, params = ... }`
 - `params` defaults to `vim.empty_dict()` (not `{}`) to avoid null in JSON
-- All calls wrapped in `safe_call()`
+- All calls are async and accept a callback as the last argument: `on_result(result, error)`
+- All calls wrapped in `async_safe_call()` which handles errors and schedules callbacks via `vim.schedule`
 
 ### Configuration
 

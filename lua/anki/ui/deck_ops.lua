@@ -10,13 +10,14 @@ local M = {}
 function M.create_deck()
 	vim.ui.input({ prompt = "Enter deck name:" }, function(deck_name)
 		if deck_name and deck_name ~= "" then
-			local result = utils.safe_call(ankiconnect.create_deck, deck_name)
-			if result == nil then
-				notification.error("[anki.nvim][deck_ops] Failed to create deck '" .. deck_name .. "'")
-				return
-			end
-			operations.refresh_all()
-			notification.info("[anki.nvim][deck_ops] Deck '" .. deck_name .. "' created")
+			utils.async_safe_call(ankiconnect.create_deck, { deck_name }, function(result, error)
+				if error or result == nil then
+					notification.error("[anki.nvim][deck_ops] Failed to create deck '" .. deck_name .. "'")
+					return
+				end
+				operations.refresh_all()
+				notification.info("[anki.nvim][deck_ops] Deck '" .. deck_name .. "' created")
+			end)
 		end
 	end)
 end
@@ -43,12 +44,15 @@ function M.delete_deck()
 			return
 		end
 		if input == "Y" or input == "y" then
-			local result = utils.safe_call(ankiconnect.delete_decks, decks)
-			if result == nil then
-				notification.error("[anki.nvim][deck_ops] Failed to delete deck.")
-				return
-			end
-			operations.refresh_all()
+			utils.async_safe_call(ankiconnect.delete_decks, { decks }, function(result, error)
+				if error or result == nil then
+					notification.error("[anki.nvim][deck_ops] Failed to delete deck.")
+					return
+				end
+				vim.schedule(function()
+					operations.refresh_all()
+				end)
+			end)
 		end
 	end)
 end
@@ -60,7 +64,7 @@ function M.gui_deck()
 		return
 	end
 	local query = string.format('"deck:%s"', utils.escape_search_query(deck_name))
-	utils.safe_call(ankiconnect.gui_browse, query)
+	utils.async_safe_call(ankiconnect.gui_browse, { query }, function(_, _) end)
 end
 
 --- Renames the currently selected deck, moving all cards to the new deck name.
@@ -75,19 +79,31 @@ function M.rename_deck()
 		prompt = "Enter new deck name:",
 		default = current_deck_name,
 	}, function(new_deck_name)
-		if new_deck_name and new_deck_name ~= "" and new_deck_name ~= current_deck_name then
-			local note_ids = utils.safe_call(ankiconnect.find_notes, string.format('"deck:%s"', utils.escape_search_query(current_deck_name)))
-			if note_ids == nil then
+		if not new_deck_name or new_deck_name == "" or new_deck_name == current_deck_name then
+			if new_deck_name == current_deck_name then
+				notification.info("[anki.nvim][deck_ops] Deck name unchanged")
+			end
+			return
+		end
+
+		local query = string.format('"deck:%s"', utils.escape_search_query(current_deck_name))
+		utils.async_safe_call(ankiconnect.find_notes, { query }, function(note_ids, error)
+			if error or note_ids == nil then
 				notification.warn("[anki.nvim][deck_ops] Failed to find notes in deck '" .. current_deck_name .. "'")
 				return
 			end
 
-			if note_ids and #note_ids > 0 then
-				local notes_info = utils.safe_call(ankiconnect.notes_info, note_ids)
-				if notes_info == nil then
+			if not note_ids or #note_ids == 0 then
+				notification.warn("[anki.nvim][deck_ops] No notes found in deck '" .. current_deck_name .. "'")
+				return
+			end
+
+			utils.async_safe_call(ankiconnect.notes_info, { note_ids }, function(notes_info, err2)
+				if err2 or not notes_info then
 					notification.warn("[anki.nvim][deck_ops] Failed to get note information")
 					return
 				end
+
 				local all_card_ids = {}
 				for _, note in ipairs(notes_info) do
 					if note.cards then
@@ -98,30 +114,33 @@ function M.rename_deck()
 				end
 
 				if #all_card_ids > 0 then
-					-- Move all cards to new deck (creates it if needed)
-					local change_deck_result = utils.safe_call(ankiconnect.change_deck, all_card_ids, new_deck_name)
-					if change_deck_result == nil then
-						notification.error("[anki.nvim][deck_ops] Failed to move cards to new deck")
-						return
-					end
-					local delete_deck_result = utils.safe_call(ankiconnect.delete_decks, { current_deck_name })
-					if delete_deck_result == nil then
-						notification.error("[anki.nvim][deck_ops] Failed to delete old deck")
-						return
-					end
-					operations.refresh_all()
-					notification.info(
-						"[anki.nvim][deck_ops] Deck '" .. current_deck_name .. "' renamed to '" .. new_deck_name .. "'"
-					)
+					utils.async_safe_call(ankiconnect.change_deck, { all_card_ids, new_deck_name }, function(_, err3)
+						if err3 then
+							notification.error("[anki.nvim][deck_ops] Failed to move cards to new deck")
+							return
+						end
+						utils.async_safe_call(ankiconnect.delete_decks, { { current_deck_name } }, function(_, err4)
+							if err4 then
+								notification.error("[anki.nvim][deck_ops] Failed to delete old deck")
+								return
+							end
+							vim.schedule(function()
+								operations.refresh_all()
+							end)
+							notification.info(
+								"[anki.nvim][deck_ops] Deck '"
+									.. current_deck_name
+									.. "' renamed to '"
+									.. new_deck_name
+									.. "'"
+							)
+						end)
+					end)
 				else
 					notification.warn("[anki.nvim][deck_ops] No cards found in deck '" .. current_deck_name .. "'")
 				end
-			else
-				notification.warn("[anki.nvim][deck_ops] No notes found in deck '" .. current_deck_name .. "'")
-			end
-		elseif new_deck_name == current_deck_name then
-			notification.info("[anki.nvim][deck_ops] Deck name unchanged")
-		end
+			end)
+		end)
 	end)
 end
 

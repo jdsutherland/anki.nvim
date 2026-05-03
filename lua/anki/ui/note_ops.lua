@@ -19,22 +19,24 @@ function M.add_note(deck_name)
 	end
 
 	local function create_new_note()
-		local model_names = utils.safe_call(ankiconnect.model_names)
-		if not model_names then
-			return
-		end
+		utils.async_safe_call(ankiconnect.model_names, nil, function(model_names, error)
+			if error or not model_names then
+				return
+			end
 
-		vim.ui.select(model_names, { prompt = "Select a model" }, function(model_name)
-			if not model_name then
-				return
-			end
-			local field_names = utils.safe_call(ankiconnect.model_field_names, model_name)
-			if not field_names then
-				return
-			end
-			local note = editor.create_note(deck_name, model_name, field_names)
-			editor.display_note(note)
-			operations.refresh_all()
+			vim.ui.select(model_names, { prompt = "Select a model" }, function(model_name)
+				if not model_name then
+					return
+				end
+				utils.async_safe_call(ankiconnect.model_field_names, { model_name }, function(field_names, err2)
+					if err2 or not field_names then
+						return
+					end
+					local note = editor.create_note(deck_name, model_name, field_names)
+					editor.display_note(note)
+					operations.refresh_all()
+				end)
+			end)
 		end)
 	end
 
@@ -159,13 +161,16 @@ function M.delete_note()
 				return
 			end
 			if input == "Y" or input == "y" then
-				local result = utils.safe_call(ankiconnect.delete_notes, note_ids)
-				if result == nil then
-					notification.error("[anki.nvim][note_ops] Failed to delete note.")
-					return
-				end
-				notification.info("[anki.nvim][note_ops] Deleted " .. tostring(#note_ids) .. " note.")
-				operations.refresh_all()
+				utils.async_safe_call(ankiconnect.delete_notes, { note_ids }, function(result, error)
+					if error or result == nil then
+						notification.error("[anki.nvim][note_ops] Failed to delete note.")
+						return
+					end
+					notification.info("[anki.nvim][note_ops] Deleted " .. tostring(#note_ids) .. " note.")
+					vim.schedule(function()
+						operations.refresh_all()
+					end)
+				end)
 			end
 		end
 	)
@@ -190,45 +195,55 @@ function M.move_note_to_deck()
 		return
 	end
 
-	local deck_names = utils.safe_call(ankiconnect.deck_names)
-	if not deck_names or #deck_names == 0 then
-		notification.error("[anki.nvim][note_ops] Could not fetch deck names.")
-		return
-	end
-	vim.ui.select(deck_names, { prompt = "Move to which deck?" }, function(target_deck)
-		if not target_deck then
+	utils.async_safe_call(ankiconnect.deck_names, nil, function(deck_names, error)
+		if error or not deck_names or #deck_names == 0 then
+			notification.error("[anki.nvim][note_ops] Could not fetch deck names.")
 			return
 		end
-		local note_ids = {}
-		for _, note in ipairs(notes) do
-			table.insert(note_ids, note.noteId)
-		end
-		local notes_info = utils.safe_call(ankiconnect.notes_info, note_ids)
-		if not notes_info then
-			notification.error("[anki.nvim][note_ops] Could not fetch note info.")
-			return
-		end
-		local card_ids = {}
-		for _, info in ipairs(notes_info) do
-			if info.cards then
-				for _, cid in ipairs(info.cards) do
-					table.insert(card_ids, cid)
-				end
+
+		vim.ui.select(deck_names, { prompt = "Move to which deck?" }, function(target_deck)
+			if not target_deck then
+				return
 			end
-		end
-		if #card_ids == 0 then
-			notification.warn("[anki.nvim][note_ops] No cards found for selected notes.")
-			return
-		end
-		local result = utils.safe_call(ankiconnect.change_deck, card_ids, target_deck)
-		if result == nil then
-			notification.error("[anki.nvim][note_ops] Failed to move cards to deck " .. target_deck)
-			return
-		end
-		notification.info(
-			"[anki.nvim][note_ops] Moved " .. tostring(#card_ids) .. " card(s) to deck '" .. target_deck .. "'."
-		)
-		operations.refresh_notes()
+			local note_ids = {}
+			for _, note in ipairs(notes) do
+				table.insert(note_ids, note.noteId)
+			end
+			utils.async_safe_call(ankiconnect.notes_info, { note_ids }, function(notes_info, err2)
+				if err2 or not notes_info then
+					notification.error("[anki.nvim][note_ops] Could not fetch note info.")
+					return
+				end
+				local card_ids = {}
+				for _, info in ipairs(notes_info) do
+					if info.cards then
+						for _, cid in ipairs(info.cards) do
+							table.insert(card_ids, cid)
+						end
+					end
+				end
+				if #card_ids == 0 then
+					notification.warn("[anki.nvim][note_ops] No cards found for selected notes.")
+					return
+				end
+				utils.async_safe_call(ankiconnect.change_deck, { card_ids, target_deck }, function(result, err3)
+					if err3 or result == nil then
+						notification.error("[anki.nvim][note_ops] Failed to move cards to deck " .. target_deck)
+						return
+					end
+					notification.info(
+						"[anki.nvim][note_ops] Moved "
+							.. tostring(#card_ids)
+							.. " card(s) to deck '"
+							.. target_deck
+							.. "'."
+					)
+					vim.schedule(function()
+						operations.refresh_notes()
+					end)
+				end)
+			end)
+		end)
 	end)
 end
 
@@ -240,7 +255,7 @@ function M.gui_note()
 		return
 	end
 	local query = string.format("nid:%s", note.noteId)
-	utils.safe_call(ankiconnect.gui_browse, query)
+	utils.async_safe_call(ankiconnect.gui_browse, { query }, function(_, _) end)
 end
 
 return M

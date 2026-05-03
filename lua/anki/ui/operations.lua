@@ -30,66 +30,99 @@ local function display_notes_in_buffer(notes_info, filter_name)
 	vim.api.nvim_buf_set_lines(anki_state.ui.note_buf_id, 0, -1, false, note_lines)
 end
 
---- Retrieves note information for a given query string.
+--- Retrieves note information for a given query string asynchronously.
 -- @param query string The search query for notes.
--- @return table|nil List of note info tables, or nil on failure.
-local function get_notes_for_query(query)
-	local note_ids = utils.safe_call(ankiconnect.find_notes, query)
-	if not note_ids then
-		return nil
-	end
-
-	return utils.safe_call(ankiconnect.notes_info, note_ids)
+-- @param on_result function Callback: on_result(notes_info)
+local function get_notes_for_query(query, on_result)
+	utils.async_safe_call(ankiconnect.find_notes, { query }, function(note_ids, error)
+		if error or not note_ids then
+			on_result(nil)
+			return
+		end
+		utils.async_safe_call(ankiconnect.notes_info, { note_ids }, function(notes_info, err2)
+			if err2 then
+				on_result(nil)
+				return
+			end
+			on_result(notes_info)
+		end)
+	end)
 end
 
---- Updates the deck buffer with the latest deck names from Anki.
-local function update_decks_view()
-	local deck_names = utils.safe_call(ankiconnect.deck_names)
-	if not deck_names then
-		return
-	end
-	anki_state.ui.decks = deck_names
-	vim.api.nvim_buf_set_lines(anki_state.ui.deck_buf_id, 0, -1, false, deck_names)
+--- Updates the deck buffer with the latest deck names from Anki asynchronously.
+-- @param on_done function|nil Optional callback called after update completes.
+local function update_decks_view(on_done)
+	utils.async_safe_call(ankiconnect.deck_names, nil, function(deck_names, error)
+		if error or not deck_names then
+			if on_done then
+				on_done()
+			end
+			return
+		end
+		anki_state.ui.decks = deck_names
+		vim.schedule(function()
+			if anki_state.ui.deck_buf_id and vim.api.nvim_buf_is_valid(anki_state.ui.deck_buf_id) then
+				vim.api.nvim_buf_set_lines(anki_state.ui.deck_buf_id, 0, -1, false, deck_names)
+			end
+			if on_done then
+				on_done()
+			end
+		end)
+	end)
 end
 
---- Refreshes the note buffer based on the current deck filter.
-local function update_notes_view()
+--- Refreshes the note buffer based on the current deck filter asynchronously.
+-- @param on_done function|nil Optional callback called after refresh completes.
+local function update_notes_view(on_done)
 	local current_filter = anki_state.ui.current_filter
 	local query = current_filter or "deck:*"
-	local notes_info = get_notes_for_query(query)
-	display_notes_in_buffer(notes_info, query)
+	get_notes_for_query(query, function(notes_info)
+		vim.schedule(function()
+			display_notes_in_buffer(notes_info, query)
+			if on_done then
+				on_done()
+			end
+		end)
+	end)
 end
 
---- Refreshes both the deck and note buffers.
+--- Refreshes both the deck and note buffers asynchronously.
 function M.refresh_all()
-	update_decks_view()
-	update_notes_view()
+	update_decks_view(function()
+		update_notes_view()
+	end)
 end
 
---- Refreshes the deck buffer.
+--- Refreshes the deck buffer asynchronously.
 function M.refresh_decks()
 	update_decks_view()
 end
 
---- Refreshes the note buffer.
+--- Refreshes the note buffer asynchronously.
 function M.refresh_notes()
 	update_notes_view()
 end
 
---- Shows all notes, ignoring any deck filter.
+--- Shows all notes, ignoring any deck filter, asynchronously.
 function M.show_all_notes()
-	local notes_info = get_notes_for_query("deck:*")
-	display_notes_in_buffer(notes_info, nil)
+	get_notes_for_query("deck:*", function(notes_info)
+		vim.schedule(function()
+			display_notes_in_buffer(notes_info, nil)
+		end)
+	end)
 end
 
---- Updates the note buffer based on the currently selected deck.
+--- Updates the note buffer based on the currently selected deck asynchronously.
 function M.select_deck()
 	local line = vim.api.nvim_get_current_line()
 	local deck_name = line
 	if deck_name then
 		local query = string.format('"deck:%s"', utils.escape_search_query(deck_name))
-		local notes_info = get_notes_for_query(query)
-		display_notes_in_buffer(notes_info, query)
+		get_notes_for_query(query, function(notes_info)
+			vim.schedule(function()
+				display_notes_in_buffer(notes_info, query)
+			end)
+		end)
 	end
 end
 
@@ -101,22 +134,26 @@ function M.open()
 		return
 	end
 
-	if not windows.check_anki_permissions(ankiconnect) then
-		return
-	end
+	windows.check_anki_permissions(ankiconnect, function(granted)
+		if not granted then
+			return
+		end
 
-	local deck_win_id = windows.create_layout()
-	windows.setup_deck_keymaps(anki_state.ui.deck_buf_id)
-	windows.setup_note_keymaps(anki_state.ui.note_buf_id)
+		vim.schedule(function()
+			local deck_win_id = windows.create_layout()
+			windows.setup_deck_keymaps(anki_state.ui.deck_buf_id)
+			windows.setup_note_keymaps(anki_state.ui.note_buf_id)
 
-	anki_state.ui.current_filter = "deck:*"
-	-- Initialize UI data
-	update_decks_view()
-	update_notes_view()
+			anki_state.ui.current_filter = "deck:*"
+			update_decks_view(function()
+				update_notes_view()
+			end)
 
-	anki_state.ui.win_id = deck_win_id
+			anki_state.ui.win_id = deck_win_id
 
-	editor.setup_editor_quit_keybinding()
+			editor.setup_editor_quit_keybinding()
+		end)
+	end)
 end
 
 --- Closes the Anki UI window and cleans up buffers.
