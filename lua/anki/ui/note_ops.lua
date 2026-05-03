@@ -126,19 +126,7 @@ end
 
 --- Deletes the note at the current cursor line after user confirmation.
 function M.delete_note()
-	local mode = vim.fn.mode()
-	local start_line, end_line
-
-	if mode == "v" or mode == "V" or mode == "\22" then
-		start_line = vim.fn.line("v")
-		end_line = vim.fn.line(".")
-		if start_line > end_line then
-			start_line, end_line = end_line, start_line
-		end
-	else
-		start_line = vim.api.nvim_win_get_cursor(0)[1]
-		end_line = start_line
-	end
+	local start_line, end_line = utils.get_visual_line_range()
 
 	local notes = {}
 	for i = start_line, end_line do
@@ -153,32 +141,30 @@ function M.delete_note()
 		return
 	end
 
-	local notes_ids = {}
+	local note_ids = {}
 	for _, info in ipairs(notes) do
-		if info.cards then
-			for _, cid in ipairs(info.cards) do
-				table.insert(notes_ids, cid)
-			end
+		if info.noteId then
+			table.insert(note_ids, info.noteId)
 		end
 	end
-	if #notes_ids == 0 then
+	if #note_ids == 0 then
 		notification.warn("[anki.nvim][note_ops] No note id found for selected notes.")
 		return
 	end
 
 	vim.ui.input(
-		{ prompt = "Are you sure you want to delete " .. tostring(#notes_ids) .. " note? (Y/n)" },
+		{ prompt = "Are you sure you want to delete " .. tostring(#note_ids) .. " note? (Y/n)" },
 		function(input)
 			if input == nil then
 				return
 			end
 			if input == "Y" or input == "y" then
-				local result = utils.safe_call(ankiconnect.delete_notes, notes_ids)
+				local result = utils.safe_call(ankiconnect.delete_notes, note_ids)
 				if result == nil then
 					notification.error("[anki.nvim][note_ops] Failed to delete note.")
 					return
 				end
-				notification.info("[anki.nvim][note_ops] Deleted " .. tostring(#notes_ids) .. " note.")
+				notification.info("[anki.nvim][note_ops] Deleted " .. tostring(#note_ids) .. " note.")
 				operations.refresh_all()
 			end
 		end
@@ -190,18 +176,7 @@ end
 ---
 --- Moves the selected note(s) to another deck, supporting both normal and visual mode selection.
 function M.move_note_to_deck()
-	local mode = vim.fn.mode()
-	local start_line, end_line
-	if mode == "v" or mode == "V" or mode == "\22" then -- visual/visual-line/block
-		start_line = vim.fn.line("v")
-		end_line = vim.fn.line(".")
-		if start_line > end_line then
-			start_line, end_line = end_line, start_line
-		end
-	else
-		start_line = vim.api.nvim_win_get_cursor(0)[1]
-		end_line = start_line
-	end
+	local start_line, end_line = utils.get_visual_line_range()
 
 	local notes = {}
 	for i = start_line, end_line do

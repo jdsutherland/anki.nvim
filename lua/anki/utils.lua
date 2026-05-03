@@ -42,12 +42,38 @@ function M.safe_call(fn, ...)
 		return nil
 	end
 
-	if result.error ~= vim.NIL then
+	if result.error ~= nil and result.error ~= vim.NIL then
 		notification.error("[anki.nvim][utils] " .. vim.inspect(result.error))
 		return nil
 	end
 
 	return result.result
+end
+
+--- Gets the visual or cursor line range for the current selection.
+--- In visual mode, returns the start and end lines of the selection.
+--- In normal mode, returns the current line for both start and end.
+---@return number start_line The starting line number (1-based).
+---@return number end_line The ending line number (1-based).
+function M.get_visual_line_range()
+	local mode = vim.fn.mode()
+	if mode == "v" or mode == "V" or mode == "\22" then
+		local start_line = vim.fn.line("v")
+		local end_line = vim.fn.line(".")
+		if start_line > end_line then
+			start_line, end_line = end_line, start_line
+		end
+		return start_line, end_line
+	end
+	local line = vim.api.nvim_win_get_cursor(0)[1]
+	return line, line
+end
+
+--- Escapes special characters in a string for use in Anki search queries.
+---@param str string The string to escape.
+---@return string The escaped string.
+function M.escape_search_query(str)
+	return str:gsub([[\]], [[\\]]):gsub('"', '\\"')
 end
 
 return M

@@ -15,7 +15,7 @@ local function notify(message, level, opts)
 	if ok then
 		notif(message, level, opts)
 	else
-		vim.notify("[" .. opts.title .. "] " .. message)
+		vim.notify("[" .. opts.title .. "] " .. message, level)
 	end
 end
 

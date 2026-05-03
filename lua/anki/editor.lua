@@ -31,7 +31,7 @@ function M.create_note(deck_name, model_name, field_names, id)
 	end
 	local fields = {}
 
-	for _, name in pairs(field_names) do
+	for _, name in ipairs(field_names) do
 		table.insert(
 			fields,
 			Field:new({
@@ -181,7 +181,7 @@ function M.delete_note_buffers(note)
 
 	-- Now that no windows are displaying them, delete the note's buffers
 	vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
-	for _, field in pairs(note.fields) do
+	for _, field in ipairs(note.fields) do
 		vim.api.nvim_buf_delete(field.editor_context.bufnr, { force = true })
 	end
 end

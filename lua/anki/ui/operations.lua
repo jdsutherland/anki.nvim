@@ -24,7 +24,7 @@ local function display_notes_in_buffer(notes_info, filter_name)
 	anki_state.ui.notes = notes_info or {}
 
 	local note_lines = {}
-	for _, note in ipairs(notes_info) do
+	for _, note in ipairs(notes_info or {}) do
 		table.insert(note_lines, format_note_display(note))
 	end
 	vim.api.nvim_buf_set_lines(anki_state.ui.note_buf_id, 0, -1, false, note_lines)
@@ -55,7 +55,7 @@ end
 --- Refreshes the note buffer based on the current deck filter.
 local function update_notes_view()
 	local current_filter = anki_state.ui.current_filter
-	local query = current_filter and current_filter or "deck:*"
+	local query = current_filter or "deck:*"
 	local notes_info = get_notes_for_query(query)
 	display_notes_in_buffer(notes_info, query)
 end
@@ -87,7 +87,7 @@ function M.select_deck()
 	local line = vim.api.nvim_get_current_line()
 	local deck_name = line
 	if deck_name then
-		local query = string.format('"deck:%s"', deck_name)
+		local query = string.format('"deck:%s"', utils.escape_search_query(deck_name))
 		local notes_info = get_notes_for_query(query)
 		display_notes_in_buffer(notes_info, query)
 	end

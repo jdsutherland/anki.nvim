@@ -11,20 +11,20 @@ local M = {}
 
 local anki_connect_invoke = function(options)
 	if type(options) ~= "table" then
-		error("Expected a table as argument")
+		error("[anki.nvim][ankiconnect] Expected a table as argument")
 	end
 	local action = options.action
 	local version = options.version or 6
 	local params = options.params or vim.empty_dict()
 
 	if not action then
-		error("Missing required fields: action")
+		error("[anki.nvim][ankiconnect] Missing required fields: action")
 	end
 	if type(version) ~= "number" then
-		error("Expected a number as version")
+		error("[anki.nvim][ankiconnect] Expected a number as version")
 	end
 	if type(params) ~= "table" then
-		error("Expected a table or nil as params")
+		error("[anki.nvim][ankiconnect] Expected a table or nil as params")
 	end
 
 	local data = {
@@ -180,7 +180,7 @@ end
 --- @error Throws if notes is not a table or AnkiConnect fails.
 M.delete_notes = function(notes)
 	if type(notes) ~= "table" then
-		error("Expected a table as argument")
+		error("[anki.nvim][ankiconnect] Expected a table as argument")
 	end
 	return anki_connect_invoke({
 		action = "deleteNotes",
@@ -192,7 +192,7 @@ end
 
 M.delete_decks = function(decks)
 	if type(decks) ~= "table" then
-		error("Expected a table as argument")
+		error("[anki.nvim][ankiconnect] Expected a table as argument")
 	end
 	return anki_connect_invoke({
 		action = "deleteDecks",
@@ -246,7 +246,7 @@ end
 --- @error Throws if name is not a string or AnkiConnect fails.
 M.load_profile = function(name)
 	if type(name) ~= "string" then
-		error("Expected a string as profile name")
+		error("[anki.nvim][ankiconnect] Expected a string as profile name")
 	end
 	return anki_connect_invoke({ action = "loadProfile", params = { name = name } })
 end

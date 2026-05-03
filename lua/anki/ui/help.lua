@@ -1,3 +1,5 @@
+local config = require("anki.config")
+
 local M = {}
 
 --- Closes the help window if it is open.
@@ -34,43 +36,46 @@ function M.show_help(context)
 	local help_lines = {}
 
 	if context == "decks" then
+		local m = config.options.mappings.deck
 		help_lines = {
 			"Anki.nvim Help - Decks",
 			"",
-			"? - Show this help window",
-			"q - Close the Anki UI tab",
-			"<CR> - Select a deck and show its notes",
-			"d - Delete Deck",
-			"c - Create Deck",
-			"a - Add Note",
-			"m - Rename Deck",
-			"o - Open in the Anki GUI",
-			"r - Refresh Decks",
-			"p - Switch Profile",
+			m.show_help .. " - Show this help window",
+			m.close .. " - Close the Anki UI tab",
+			m.select_deck .. " - Select a deck and show its notes",
+			m.delete_deck .. " - Delete Deck",
+			m.create_deck .. " - Create Deck",
+			m.add_note .. " - Add Note",
+			m.rename_deck .. " - Rename Deck",
+			m.gui_deck .. " - Open in the Anki GUI",
+			m.refresh_decks .. " - Refresh Decks",
+			m.switch_profile .. " - Switch Profile",
 		}
 	elseif context == "notes" then
+		local m = config.options.mappings.note
 		help_lines = {
 			"Anki.nvim Help - Notes",
 			"",
-			"? - Show this help window",
-			"q - Close the Anki UI tab",
-			"<CR> - Edit note",
-			"a - Show all notes",
-			"d - Delete note",
-			"o - Open in the Anki GUI",
-			"r - Refresh Notes",
+			m.show_help .. " - Show this help window",
+			m.close .. " - Close the Anki UI tab",
+			m.edit_note .. " - Edit note",
+			m.show_all_notes .. " - Show all notes",
+			m.delete_note .. " - Delete note",
+			m.gui_note .. " - Open in the Anki GUI",
+			m.refresh_notes .. " - Refresh Notes",
 		}
 	elseif context == "editor" then
+		local m = config.options.mappings.editor
 		help_lines = {
 			"Anki.nvim Help - Editor",
 			"",
-			"? - Show this help window",
+			m.show_help .. " - Show this help window",
 			"q - Close the Anki UI tab (when no note is open)",
-			"<leader>w - Write/Send note to Anki",
-			"<leader>p - Pull note from Anki",
-			"<leader>r - Remove/Delete note from Anki",
-			"<leader>k - Kill/Close the note editor",
-			"<leader>m - Attach media (image/audio/video)",
+			m.send_note .. " - Write/Send note to Anki",
+			m.pull_note .. " - Pull note from Anki",
+			m.delete_note .. " - Remove/Delete note from Anki",
+			m.kill_note .. " - Kill/Close the note editor",
+			m.attach_media .. " - Attach media (image/audio/video)",
 		}
 	end
 

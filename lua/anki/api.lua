@@ -58,12 +58,12 @@ local function handle_gui_browse(note, is_new, fields, tags)
 	end
 
 	if is_new then
-		local query = string.format('"deck:%s" nid:%s', note.deck_name, note.id)
+		local query = string.format('"deck:%s" nid:%s', utils.escape_search_query(note.deck_name), note.id)
 		utils.safe_call(ankiconnect.gui_browse, query)
 	else
 		utils.safe_call(ankiconnect.gui_browse, "nid:1")
 		utils.safe_call(ankiconnect.update_note, note.id, fields, tags)
-		local query = string.format('"deck:%s" nid:%s', note.deck_name, note.id)
+		local query = string.format('"deck:%s" nid:%s', utils.escape_search_query(note.deck_name), note.id)
 		utils.safe_call(ankiconnect.gui_browse, query)
 	end
 end
@@ -74,6 +74,16 @@ local function notify_user(is_new)
 	notification.info(is_new and "Note added" or "Note updated")
 end
 
+local function upload_media_entry(filename, entry)
+	if entry.path then
+		utils.safe_call(ankiconnect.store_media_file, filename, { path = entry.path })
+	elseif entry.url then
+		utils.safe_call(ankiconnect.store_media_file, filename, { url = entry.url })
+	elseif entry.data then
+		utils.safe_call(ankiconnect.store_media_file, filename, { data = entry.data })
+	end
+end
+
 --- Uploads all pending media attachments for a note via storeMediaFile.
 --- Used for update_note which doesn't support inline media params.
 -- @param note table The note object with media attachments.
@@ -81,31 +91,9 @@ local function upload_note_media(note)
 	if not note.media then
 		return
 	end
-	for _, entry in ipairs(note.media.picture or {}) do
-		if entry.path then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { path = entry.path })
-		elseif entry.url then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { url = entry.url })
-		elseif entry.data then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { data = entry.data })
-		end
-	end
-	for _, entry in ipairs(note.media.audio or {}) do
-		if entry.path then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { path = entry.path })
-		elseif entry.url then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { url = entry.url })
-		elseif entry.data then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { data = entry.data })
-		end
-	end
-	for _, entry in ipairs(note.media.video or {}) do
-		if entry.path then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { path = entry.path })
-		elseif entry.url then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { url = entry.url })
-		elseif entry.data then
-			utils.safe_call(ankiconnect.store_media_file, entry.filename, { data = entry.data })
+	for _, media_type in ipairs({ "picture", "audio", "video" }) do
+		for _, entry in ipairs(note.media[media_type] or {}) do
+			upload_media_entry(entry.filename, entry)
 		end
 	end
 end
@@ -176,7 +164,11 @@ M.send_note = function(bufnr, kill)
 		-- since updateNote doesn't support inline media params
 		upload_note_media(note_to_send)
 		handle_gui_browse(note_to_send, false, fields, tags)
-		utils.safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
+		local update_result = utils.safe_call(ankiconnect.update_note, note_to_send.id, fields, tags)
+		if not update_result then
+			notification.error("[anki.nvim][api] Failed to update note")
+			return
+		end
 	end
 
 	-- Cleanup if requested
@@ -213,6 +205,10 @@ M.pull_note = function(bufnr)
 		return
 	end
 	local first_note = notes_data[1]
+	if not first_note then
+		notification.error("[anki.nvim][api] Note not found in Anki")
+		return
+	end
 
 	vim.api.nvim_buf_set_lines(note_to_pull.tags.bufnr, 0, -1, false, first_note.tags)
 
@@ -258,7 +254,7 @@ M.delete_note = function(bufnr)
 	notification.info("[anki.nvim][api] Note deleted")
 
 	if config.options.gui_browse_enabled then
-		local query = string.format('"deck:%s"', note_to_delete.deck_name)
+		local query = string.format('"deck:%s"', utils.escape_search_query(note_to_delete.deck_name))
 		utils.safe_call(ankiconnect.gui_browse, query)
 	end
 	operations.refresh_all()

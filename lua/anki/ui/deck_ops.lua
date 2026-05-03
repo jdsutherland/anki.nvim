@@ -23,19 +23,7 @@ end
 
 --- Deletes the currently selected deck after user confirmation.
 function M.delete_deck()
-	local mode = vim.fn.mode()
-	local start_line, end_line
-
-	if mode == "v" or mode == "V" or mode == "\22" then
-		start_line = vim.fn.line("v")
-		end_line = vim.fn.line(".")
-		if start_line > end_line then
-			start_line, end_line = end_line, start_line
-		end
-	else
-		start_line = vim.api.nvim_win_get_cursor(0)[1]
-		end_line = start_line
-	end
+	local start_line, end_line = utils.get_visual_line_range()
 
 	local decks = {}
 	for i = start_line, end_line do
@@ -71,7 +59,7 @@ function M.gui_deck()
 	if not deck_name then
 		return
 	end
-	local query = string.format('"deck:%s"', deck_name)
+	local query = string.format('"deck:%s"', utils.escape_search_query(deck_name))
 	utils.safe_call(ankiconnect.gui_browse, query)
 end
 
@@ -88,7 +76,7 @@ function M.rename_deck()
 		default = current_deck_name,
 	}, function(new_deck_name)
 		if new_deck_name and new_deck_name ~= "" and new_deck_name ~= current_deck_name then
-			local note_ids = utils.safe_call(ankiconnect.find_notes, string.format('"deck:%s"', current_deck_name))
+			local note_ids = utils.safe_call(ankiconnect.find_notes, string.format('"deck:%s"', utils.escape_search_query(current_deck_name)))
 			if note_ids == nil then
 				notification.warn("[anki.nvim][deck_ops] Failed to find notes in deck '" .. current_deck_name .. "'")
 				return

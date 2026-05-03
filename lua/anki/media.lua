@@ -241,25 +241,31 @@ function M._attach_clipboard(bufnr)
 	local has_powersetclipboard = vim.fn.executable("powershell.exe") == 1 or vim.fn.executable("pwsh") == 1
 	local has_pbcopy = vim.fn.executable("pbpaste") == 1
 
-	local tmp_file = os.tmpname()
+	local tmp_file = vim.fn.tempname()
 	local success = false
 
 	if has_wayland and vim.fn.executable("wl-paste") == 1 then
-		success = os.execute(string.format("wl-paste --type image/png > %s 2>/dev/null", tmp_file))
+		vim.fn.system(string.format("wl-paste --type image/png > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
+		success = vim.v.shell_error == 0
 	elseif has_xclip then
-		success = os.execute(string.format("xclip -selection clipboard -t image/png -o > %s 2>/dev/null", tmp_file))
+		vim.fn.system(string.format("xclip -selection clipboard -t image/png -o > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
+		success = vim.v.shell_error == 0
 	elseif has_xsel then
-		success = os.execute(string.format("xsel --clipboard --input > %s 2>/dev/null", tmp_file))
+		vim.fn.system(string.format("xsel --clipboard --input -o > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
+		success = vim.v.shell_error == 0
 	elseif has_pbcopy then
-		success = os.execute(string.format("pbpaste > %s 2>/dev/null", tmp_file))
+		vim.fn.system(string.format("pbpaste > %s 2>/dev/null", vim.fn.shellescape(tmp_file)))
+		success = vim.v.shell_error == 0
 	elseif has_powersetclipboard then
 		tmp_file = tmp_file .. ".png"
-		success = os.execute(
+		local escaped_path = tmp_file:gsub("\\", "\\\\"):gsub("'", "''")
+		vim.fn.system(
 			string.format(
 				"powershell.exe -NoProfile -Command \"Get-Clipboard -Format Image | ForEach-Object { $_.Save('%s') }\" 2>/dev/null",
-				tmp_file
+				escaped_path
 			)
 		)
+		success = vim.v.shell_error == 0
 	end
 
 	if not success then

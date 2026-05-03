@@ -70,7 +70,7 @@ function M.create_layout()
 
 	vim.api.nvim_set_current_win(deck_win_id)
 
-	vim.api.nvim_buf_set_option(anki_state.ui.note_buf_id, "wrap", false)
+	vim.api.nvim_set_option_value("wrap", false, { win = note_win_id })
 
 	return deck_win_id
 end

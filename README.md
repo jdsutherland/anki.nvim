@@ -90,11 +90,11 @@ require("anki").setup({
       move_note_to_deck = "m",
     },
     editor = {
+      show_help = "?",
       send_note = "<leader>w",
       pull_note = "<leader>p",
       delete_note = "<leader>r",
       kill_note = "<leader>k",
-      show_help = "?",
     },
   },
 })

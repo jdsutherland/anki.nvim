@@ -75,5 +75,33 @@ describe("anki.utils", function()
       end
       assert.are.equal(5, utils.safe_call(fn, 2, 3))
     end)
+
+    it("returns result when response has no error field", function()
+      local fn = function()
+        return { result = "success" }
+      end
+      assert.are.equal("success", utils.safe_call(fn))
+    end)
+  end)
+
+  describe("escape_search_query", function()
+    it("escapes double quotes in search queries", function()
+      local result = utils.escape_search_query('deck:"My Deck"')
+      assert.are.equal('deck:\\"My Deck\\"', result)
+    end)
+
+    it("escapes backslashes in search queries", function()
+      local result = utils.escape_search_query([[My\Deck]])
+      assert.are.equal([[My\\Deck]], result)
+    end)
+
+    it("escapes both backslashes and quotes together", function()
+      local result = utils.escape_search_query([[My\"Deck]])
+      assert.are.equal([[My\\\"Deck]], result)
+    end)
+
+    it("returns the string unchanged when no special characters", function()
+      assert.are.equal("Default", utils.escape_search_query("Default"))
+    end)
   end)
 end)
