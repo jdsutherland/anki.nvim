@@ -178,28 +178,13 @@ M.send_note = function(bufnr, kill)
 	local tags = content.tags
 	local is_new_note = note_to_send.id == nil
 
-	local function do_send()
-		if note_to_send.id then
-			validate_note_exists(note_to_send.id, function(exists)
-				if not exists then
-					note_to_send.id = nil
-					is_new_note = true
-				end
-				process_send()
-			end)
-		else
-			process_send()
+	local function cleanup_and_notify()
+		if kill then
+			editor.delete_note_buffers(note_to_send)
+			anki_state.current_note = nil
 		end
-	end
-
-	local function process_send()
-		can_add_note(note_to_send.deck_name, note_to_send.model_name, fields, tags, function(can_add)
-			if is_new_note then
-				send_new_note(can_add)
-			else
-				send_existing_note()
-			end
-		end)
+		notify_user(is_new_note)
+		operations.refresh_all()
 	end
 
 	local function send_new_note(can_add)
@@ -207,10 +192,6 @@ M.send_note = function(bufnr, kill)
 			notification.error("[anki.nvim][api] The note already exists but its ID is unknown by anki.nvim")
 			return
 		end
-
-		local has_media = #note_to_send.media.picture > 0
-			or #note_to_send.media.audio > 0
-			or #note_to_send.media.video > 0
 
 		local on_add_result = function(result_note_id, error)
 			if error or not result_note_id then
@@ -224,19 +205,11 @@ M.send_note = function(bufnr, kill)
 			end)
 		end
 
-		if has_media then
-			utils.async_safe_call(
-				ankiconnect.add_note,
-				{ note_to_send.deck_name, note_to_send.model_name, fields, tags, note_to_send.media },
-				on_add_result
-			)
-		else
-			utils.async_safe_call(
-				ankiconnect.add_note,
-				{ note_to_send.deck_name, note_to_send.model_name, fields, tags },
-				on_add_result
-			)
-		end
+		utils.async_safe_call(
+			ankiconnect.add_note,
+			{ note_to_send.deck_name, note_to_send.model_name, fields, tags, note_to_send.media },
+			on_add_result
+		)
 	end
 
 	local function send_existing_note()
@@ -257,13 +230,28 @@ M.send_note = function(bufnr, kill)
 		end)
 	end
 
-	local function cleanup_and_notify()
-		if kill then
-			editor.delete_note_buffers(note_to_send)
-			anki_state.current_note = nil
+	local function process_send()
+		can_add_note(note_to_send.deck_name, note_to_send.model_name, fields, tags, function(can_add)
+			if is_new_note then
+				send_new_note(can_add)
+			else
+				send_existing_note()
+			end
+		end)
+	end
+
+	local function do_send()
+		if note_to_send.id then
+			validate_note_exists(note_to_send.id, function(exists)
+				if not exists then
+					note_to_send.id = nil
+					is_new_note = true
+				end
+				process_send()
+			end)
+		else
+			process_send()
 		end
-		notify_user(is_new_note)
-		operations.refresh_all()
 	end
 
 	do_send()
