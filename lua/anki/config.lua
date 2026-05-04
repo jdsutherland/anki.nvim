@@ -14,6 +14,7 @@
 ---@field gui_browse_enabled boolean Whether to open Anki GUI when sending/pulling notes.
 ---@field create_user_commands boolean Whether to create the `:Anki` user command.
 ---@field mappings AnkiMappings Buffer-local keymappings for deck, note, and editor panes.
+---@field note_formatter fun(note: table): string Function to format a note for display in the note list.
 
 ---@class AnkiMappings
 ---@field deck AnkiDeckMappings Deck pane keymaps.
@@ -60,6 +61,13 @@ M.defaults = {
 	default_mappings = true,
 	gui_browse_enabled = true,
 	create_user_commands = true,
+	note_formatter = function(note)
+		local display = ""
+		for key, field in pairs(note.fields) do
+			display = display .. " [" .. key .. "]> " .. string.gsub(field.value, "[\r\n]", " ")
+		end
+		return display
+	end,
 	mappings = {
 		deck = {
 			show_help = "?",

@@ -1,4 +1,5 @@
 local anki_state = require("anki.state")
+local config = require("anki.config")
 local utils = require("anki.utils")
 local ankiconnect = require("anki.ankiconnect")
 local editor = require("anki.editor")
@@ -9,11 +10,7 @@ local M = {}
 -- @param note table The note object.
 -- @return string The formatted note string.
 local function format_note_display(note)
-	local display = ""
-	for key, field in pairs(note.fields) do
-		display = display .. " [" .. key .. "]> " .. string.gsub(field.value, "[\r\n]", " ")
-	end
-	return display
+	return config.options.note_formatter(note)
 end
 
 --- Displays a list of notes in the note buffer, updating state.

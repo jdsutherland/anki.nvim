@@ -14,6 +14,7 @@ describe("anki.config", function()
 			assert.is_not_nil(config.defaults.gui_browse_enabled)
 			assert.is_not_nil(config.defaults.create_user_commands)
 			assert.is_not_nil(config.defaults.mappings)
+			assert.is_not_nil(config.defaults.note_formatter)
 		end)
 
 		it("has expected default values", function()
@@ -59,6 +60,36 @@ describe("anki.config", function()
 			assert.is_not_nil(editor.kill_note)
 			assert.is_not_nil(editor.show_help)
 		end)
+
+		it("has a note_formatter that formats note fields", function()
+			local note = {
+				fields = {
+					Front = { value = "What is 2+2?" },
+				},
+			}
+			local result = config.defaults.note_formatter(note)
+			assert.are.equal(" [Front]> What is 2+2?", result)
+		end)
+
+		it("has a note_formatter that collapses newlines in field values", function()
+			local note = {
+				fields = {
+					Text = { value = "line1\nline2\nline3" },
+				},
+			}
+			local result = config.defaults.note_formatter(note)
+			assert.are.equal(" [Text]> line1 line2 line3", result)
+		end)
+
+		it("has a note_formatter that collapses carriage returns in field values", function()
+			local note = {
+				fields = {
+					Text = { value = "line1\r\nline2" },
+				},
+			}
+			local result = config.defaults.note_formatter(note)
+			assert.are.equal(" [Text]> line1  line2", result)
+		end)
 	end)
 
 	describe("setup", function()
@@ -95,6 +126,25 @@ describe("anki.config", function()
 			assert.has_error(function()
 				config.setup(42)
 			end, "[anki.nvim][config] setup: opts must be a table or nil")
+		end)
+
+		it("overrides note_formatter when provided", function()
+			local call_log = {}
+			local custom_formatter = function(note)
+				table.insert(call_log, note)
+				return "custom"
+			end
+			config.setup({ note_formatter = custom_formatter })
+
+			local note = {
+				fields = {
+					Front = { value = "hello" },
+				},
+			}
+			local result = config.options.note_formatter(note)
+			assert.are.equal("custom", result)
+			assert.are.equal(1, #call_log)
+			assert.are.same(note, call_log[1])
 		end)
 	end)
 end)
