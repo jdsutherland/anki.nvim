@@ -14,6 +14,8 @@ local curl = require("plenary.curl")
 ---
 local M = {}
 
+local LARGE_BODY_THRESHOLD = 100 * 1024
+
 local function anki_connect_invoke_async(options, on_result)
 	if type(options) ~= "table" then
 		error("[anki.nvim][ankiconnect] Expected a table as argument")
@@ -43,38 +45,61 @@ local function anki_connect_invoke_async(options, on_result)
 
 	local post_data = vim.json.encode(data, { escape_slash = true })
 
-	curl.post(config.options.url, {
-		body = post_data,
+	local tmp_file
+
+	local function handle_response(response)
+		if tmp_file then
+			os.remove(tmp_file)
+		end
+
+		if response.exit ~= 0 then
+			on_result(
+				nil,
+				[=[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please:
+    1. Make sure Anki is running
+    2. Verify AnkiConnect addon is installed in Anki
+    3. Check that the URL in the config is correct]=]
+			)
+			return
+		end
+
+		local ok, decoded = pcall(vim.json.decode, response.body, { luanil = { objects = false, array = false } })
+		if not ok then
+			on_result(nil, "[anki.nvim][ankiconnect] Failed to decode JSON response: " .. tostring(decoded))
+			return
+		end
+
+		if decoded.error ~= nil and decoded.error ~= vim.NIL then
+			on_result(nil, vim.inspect(decoded.error))
+			return
+		end
+
+		on_result(decoded.result, nil)
+	end
+
+	local post_opts = {
 		headers = {
 			content_type = "application/json",
 		},
 		timeout = config.options.timeout,
-		callback = function(response)
-			if response.exit ~= 0 then
-				on_result(
-					nil,
-					[=[Failed to send request, make sure Anki is running and AnkiConnect is installed. Please:
-    1. Make sure Anki is running
-    2. Verify AnkiConnect addon is installed in Anki
-    3. Check that the URL in the config is correct]=]
-				)
-				return
-			end
+		callback = handle_response,
+	}
 
-			local ok, decoded = pcall(vim.json.decode, response.body, { luanil = { objects = false, array = false } })
-			if not ok then
-				on_result(nil, "[anki.nvim][ankiconnect] Failed to decode JSON response: " .. tostring(decoded))
-				return
-			end
+	if #post_data > LARGE_BODY_THRESHOLD then
+		tmp_file = vim.fn.tempname()
+		local f = io.open(tmp_file, "wb")
+		if not f then
+			on_result(nil, "[anki.nvim][ankiconnect] Failed to create temp file for large request body")
+			return
+		end
+		f:write(post_data)
+		f:close()
+		post_opts.body = tmp_file
+	else
+		post_opts.body = post_data
+	end
 
-			if decoded.error ~= nil and decoded.error ~= vim.NIL then
-				on_result(nil, vim.inspect(decoded.error))
-				return
-			end
-
-			on_result(decoded.result, nil)
-		end,
-	})
+	curl.post(config.options.url, post_opts)
 end
 
 M.deck_names = function(on_result)
