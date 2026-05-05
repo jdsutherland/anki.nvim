@@ -93,6 +93,27 @@ describe("anki.media", function()
 	end)
 end)
 
+describe("_attach_browse", function()
+	it("calls get_media_files_names with pattern and callback arguments", function()
+		local ankiconnect = require("anki.ankiconnect")
+		local received_pattern = nil
+		local received_callback_type = nil
+		local original_fn = ankiconnect.get_media_files_names
+
+		ankiconnect.get_media_files_names = function(pattern, on_result)
+			received_pattern = pattern
+			received_callback_type = type(on_result)
+		end
+
+		media._attach_browse(1)
+
+		assert.are.equal("*", received_pattern)
+		assert.are.equal("function", received_callback_type)
+
+		ankiconnect.get_media_files_names = original_fn
+	end)
+end)
+
 describe("Note.media", function()
 	local function make_field(name, bufnr)
 		return Field:new({

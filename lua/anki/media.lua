@@ -331,7 +331,7 @@ end
 --- Handles browsing and inserting existing media from Anki's collection.
 ---@param bufnr number The buffer to insert the reference into.
 function M._attach_browse(bufnr)
-	utils.async_safe_call(ankiconnect.get_media_files_names, nil, function(media_files, error)
+	utils.async_safe_call(ankiconnect.get_media_files_names, { "*" }, function(media_files, error)
 		if error or not media_files then
 			notification.error("[anki.nvim][media] Failed to list Anki media files")
 			return
