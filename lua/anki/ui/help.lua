@@ -75,7 +75,7 @@ function M.show_help(context)
 			m.pull_note .. " - Pull note from Anki",
 			m.delete_note .. " - Remove/Delete note from Anki",
 			m.kill_note .. " - Kill/Close the note editor",
-			m.attach_media .. " - Attach media (image/audio/video)",
+			m.attach_media .. " - Attach media (image/audio/video) [field buffers only]",
 		}
 	end
 

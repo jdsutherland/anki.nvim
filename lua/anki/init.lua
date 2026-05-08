@@ -18,8 +18,8 @@
 ---@brief ]]
 
 local config = require("anki.config")
-local operations = require("anki.ui.operations")
 local media = require("anki.media")
+local operations = require("anki.ui.operations")
 
 local M = {}
 
@@ -44,13 +44,6 @@ local function setup_commands()
 		operations.open()
 	end, {
 		desc = "[Anki] Open the main Anki window",
-		nargs = 0,
-	})
-
-	vim.api.nvim_create_user_command("AnkiAttachMedia", function()
-		media.attach_media(vim.api.nvim_win_get_buf(0))
-	end, {
-		desc = "[Anki] Attach media to the current Anki note field",
 		nargs = 0,
 	})
 end

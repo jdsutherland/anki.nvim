@@ -87,24 +87,41 @@ function M.display_note(note)
 	vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://Tags_" .. counter)
 	vim.api.nvim_win_set_buf(editor_win_id, note.tags.bufnr)
 
-	local bufnrs = { note.tags.bufnr }
-	for _, field in ipairs(note.fields) do
-		table.insert(bufnrs, field.editor_context.bufnr)
+	local tags_bufnr = note.tags.bufnr
+	local tags_mappings = {
+		send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", tags_bufnr),
+		pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", tags_bufnr),
+		delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", tags_bufnr),
+		kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", tags_bufnr),
+		show_help = string.format("<Cmd>lua require('anki.ui.help').show_help('editor')<CR>"),
+	}
+
+	for action, key in pairs(config.options.mappings.editor) do
+		if tags_mappings[action] then
+			vim.api.nvim_buf_set_keymap(tags_bufnr, "n", key, tags_mappings[action], { noremap = true, silent = true })
+		end
 	end
 
-	for _, bufnr in ipairs(bufnrs) do
-		local mappings = {
-			send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", bufnr),
-			pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", bufnr),
-			delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", bufnr),
-			kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", bufnr),
+	for _, field in ipairs(note.fields) do
+		local field_bufnr = field.editor_context.bufnr
+		local field_mappings = {
+			send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", field_bufnr),
+			pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", field_bufnr),
+			delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", field_bufnr),
+			kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", field_bufnr),
 			show_help = string.format("<Cmd>lua require('anki.ui.help').show_help('editor')<CR>"),
-			attach_media = string.format("<Cmd>lua require('anki.media').attach_media(%d)<CR>", bufnr),
+			attach_media = string.format("<Cmd>lua require('anki.media').attach_media(%d)<CR>", field_bufnr),
 		}
 
 		for action, key in pairs(config.options.mappings.editor) do
-			if mappings[action] then
-				vim.api.nvim_buf_set_keymap(bufnr, "n", key, mappings[action], { noremap = true, silent = true })
+			if field_mappings[action] then
+				vim.api.nvim_buf_set_keymap(
+					field_bufnr,
+					"n",
+					key,
+					field_mappings[action],
+					{ noremap = true, silent = true }
+				)
 			end
 		end
 	end

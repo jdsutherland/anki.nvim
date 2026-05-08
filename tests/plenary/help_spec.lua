@@ -107,7 +107,7 @@ describe("anki.ui.help", function()
 			assert.is_true(found[m.show_help .. " - Show this help window"] ~= nil)
 			assert.is_true(found[m.send_note .. " - Write/Send note to Anki"] ~= nil)
 			assert.is_true(found[m.kill_note .. " - Kill/Close the note editor"] ~= nil)
-			assert.is_true(found[m.attach_media .. " - Attach media (image/audio/video)"] ~= nil)
+			assert.is_true(found[m.attach_media .. " - Attach media (image/audio/video) [field buffers only]"] ~= nil)
 		end)
 
 		it("includes hardcoded q close mapping instead of config close key", function()
