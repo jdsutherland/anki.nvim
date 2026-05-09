@@ -16,6 +16,17 @@
 ---@field mappings AnkiMappings Buffer-local keymappings for deck, note, and editor panes.
 ---@field note_formatter fun(note: table): string Function to format a note for display in the note list.
 ---@field media_browser_preview boolean Use floating media browser with image preview when browsing Anki media (default: `true`). Falls back to vim.ui.select if disabled or if snacks.nvim image is unavailable.
+---@field media_browser AnkiMediaBrowserConfig Floating media browser window configuration.
+
+---@class AnkiMediaBrowserConfig
+---@field width number Total width as fraction of &columns (default: `0.85`).
+---@field height number Total height as fraction of &lines (default: `0.8`).
+---@field list_width number List pane width as fraction of total width (default: `0.35`).
+---@field border string|table Border characters for nvim_open_win (default: `{ " ", " ", " ", " ", " ", " ", " ", " " }`).
+---@field list_title string Title for the media list window (default: `" Media "`).
+---@field preview_title string Title for the preview window (default: `" Preview "`).
+---@field list_win_opts table<string,any> Window-local options for the list pane (default: `{ cursorline = true, wrap = false }`).
+---@field preview_win_opts table<string,any> Window-local options for the preview pane (default: `{ wrap = false, number = false, relativenumber = false, signcolumn = "no" }`).
 
 ---@class AnkiMappings
 ---@field deck AnkiDeckMappings Deck pane keymaps.
@@ -70,6 +81,16 @@ M.defaults = {
 		return display
 	end,
 	media_browser_preview = true,
+	media_browser = {
+		width = 0.85,
+		height = 0.8,
+		list_width = 0.35,
+		border = { " ", " ", " ", " ", " ", " ", " ", " " },
+		list_title = " Media ",
+		preview_title = " Preview ",
+		list_win_opts = { cursorline = true, wrap = false },
+		preview_win_opts = { wrap = false, number = false, relativenumber = false, signcolumn = "no" },
+	},
 	mappings = {
 		deck = {
 			show_help = "?",

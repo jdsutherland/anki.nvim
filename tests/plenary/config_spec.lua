@@ -16,6 +16,7 @@ describe("anki.config", function()
 			assert.is_not_nil(config.defaults.mappings)
 			assert.is_not_nil(config.defaults.note_formatter)
 			assert.is_not_nil(config.defaults.media_browser_preview)
+			assert.is_not_nil(config.defaults.media_browser)
 		end)
 
 		it("has expected default values", function()
@@ -91,6 +92,21 @@ describe("anki.config", function()
 			local result = config.defaults.note_formatter(note)
 			assert.are.equal(" [Text]> line1  line2", result)
 		end)
+
+		it("has media_browser defaults with all keys", function()
+			local mb = config.defaults.media_browser
+			assert.are.equal(0.85, mb.width)
+			assert.are.equal(0.8, mb.height)
+			assert.are.equal(0.35, mb.list_width)
+			assert.are.same({ " ", " ", " ", " ", " ", " ", " ", " " }, mb.border)
+			assert.are.equal(" Media ", mb.list_title)
+			assert.are.equal(" Preview ", mb.preview_title)
+			assert.are.same({ cursorline = true, wrap = false }, mb.list_win_opts)
+			assert.are.same(
+				{ wrap = false, number = false, relativenumber = false, signcolumn = "no" },
+				mb.preview_win_opts
+			)
+		end)
 	end)
 
 	describe("setup", function()
@@ -117,6 +133,15 @@ describe("anki.config", function()
 			assert.are.equal("N", config.options.mappings.deck.create_deck)
 			assert.are.equal(config.defaults.mappings.deck.close, config.options.mappings.deck.close)
 			assert.are.equal(config.defaults.mappings.note.edit_note, config.options.mappings.note.edit_note)
+		end)
+
+		it("deep-merges media_browser overrides", function()
+			config.setup({ media_browser = { width = 0.7, list_title = " Files " } })
+			assert.are.equal(0.7, config.options.media_browser.width)
+			assert.are.equal(" Files ", config.options.media_browser.list_title)
+			assert.are.equal(config.defaults.media_browser.height, config.options.media_browser.height)
+			assert.are.same(config.defaults.media_browser.border, config.options.media_browser.border)
+			assert.are.same(config.defaults.media_browser.list_win_opts, config.options.media_browser.list_win_opts)
 		end)
 
 		it("throws error when opts is not a table or nil", function()

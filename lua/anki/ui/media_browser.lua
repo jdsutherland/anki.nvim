@@ -6,6 +6,7 @@
 --- Image preview uses snacks.nvim when available; falls back to metadata display.
 ---
 local ankiconnect = require("anki.ankiconnect")
+local config = require("anki.config")
 local media = require("anki.media")
 local notification = require("anki.notification")
 local utils = require("anki.utils")
@@ -31,6 +32,11 @@ local state = {
 		start_row = 0,
 		start_col = 0,
 		list_width = 0,
+		border = { " ", " ", " ", " ", " ", " ", " ", " " },
+		list_title = " Media ",
+		preview_title = " Preview ",
+		list_win_opts = {},
+		preview_win_opts = {},
 	},
 }
 
@@ -96,11 +102,10 @@ local function get_filename_from_line(line)
 	return line
 end
 
-local function set_preview_window_options(win)
-	vim.api.nvim_set_option_value("wrap", false, { win = win })
-	vim.api.nvim_set_option_value("number", false, { win = win })
-	vim.api.nvim_set_option_value("relativenumber", false, { win = win })
-	vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+local function apply_win_opts(win, opts)
+	for opt, val in pairs(opts) do
+		vim.api.nvim_set_option_value(opt, val, { win = win })
+	end
 end
 
 local function recreate_preview_buf()
@@ -127,12 +132,12 @@ local function recreate_preview_buf()
 		row = cfg.start_row,
 		col = cfg.start_col + cfg.list_width + 3,
 		style = "minimal",
-		border = { " ", " ", " ", " ", " ", " ", " ", " " },
-		title = " Preview ",
+		border = cfg.border,
+		title = cfg.preview_title,
 		title_pos = "center",
 	})
 
-	set_preview_window_options(state.preview_win)
+	apply_win_opts(state.preview_win, cfg.preview_win_opts)
 end
 
 local function show_preview_metadata(filename)
@@ -379,9 +384,10 @@ function M.open(bufnr, media_files)
 	state.preview_generation = 0
 	state.last_preview_filename = nil
 
-	local total_width = math.floor(vim.o.columns * 0.85)
-	local total_height = math.floor(vim.o.lines * 0.8)
-	local list_width = math.floor(total_width * 0.35)
+	local mb = config.options.media_browser
+	local total_width = math.floor(vim.o.columns * mb.width)
+	local total_height = math.floor(vim.o.lines * mb.height)
+	local list_width = math.floor(total_width * mb.list_width)
 	local preview_width = total_width - list_width - 3
 
 	local start_col = math.floor((vim.o.columns - total_width) / 2)
@@ -394,6 +400,11 @@ function M.open(bufnr, media_files)
 		start_row = start_row,
 		start_col = start_col,
 		list_width = list_width,
+		border = mb.border,
+		list_title = mb.list_title,
+		preview_title = mb.preview_title,
+		list_win_opts = mb.list_win_opts,
+		preview_win_opts = mb.preview_win_opts,
 	}
 
 	state.list_buf = vim.api.nvim_create_buf(false, true)
@@ -421,8 +432,8 @@ function M.open(bufnr, media_files)
 		row = start_row,
 		col = start_col,
 		style = "minimal",
-		border = { " ", " ", " ", " ", " ", " ", " ", " " },
-		title = " Media ",
+		border = mb.border,
+		title = mb.list_title,
 		title_pos = "center",
 	})
 
@@ -433,14 +444,13 @@ function M.open(bufnr, media_files)
 		row = start_row,
 		col = start_col + list_width + 3,
 		style = "minimal",
-		border = { " ", " ", " ", " ", " ", " ", " ", " " },
-		title = " Preview ",
+		border = mb.border,
+		title = mb.preview_title,
 		title_pos = "center",
 	})
 
-	vim.api.nvim_set_option_value("cursorline", true, { win = state.list_win })
-	vim.api.nvim_set_option_value("wrap", false, { win = state.list_win })
-	set_preview_window_options(state.preview_win)
+	apply_win_opts(state.list_win, mb.list_win_opts)
+	apply_win_opts(state.preview_win, mb.preview_win_opts)
 
 	vim.api.nvim_create_autocmd("CursorMoved", {
 		buffer = state.list_buf,

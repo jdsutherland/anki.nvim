@@ -44,14 +44,29 @@ Configuration                                                      *anki.config*
 AnkiConfig                                              *anki.config.AnkiConfig*
 
     Fields: ~
-        {url}                   (string)                  AnkiConnect server URL.
-        {timeout}               (number)                  HTTP request timeout in milliseconds.
-        {prefix}                (string)                  Keymap prefix to open the Anki UI (default: `"<leader>a"`).
-        {default_mappings}      (boolean)                 Whether to auto-set the prefix keymap.
-        {gui_browse_enabled}    (boolean)                 Whether to open Anki GUI when sending/pulling notes.
-        {create_user_commands}  (boolean)                 Whether to create the `:Anki` user command.
-        {mappings}              (AnkiMappings)            Buffer-local keymappings for deck, note, and editor panes.
-        {note_formatter}        (fun(note:table):string)  Function to format a note for display in the note list.
+        {url}                    (string)                  AnkiConnect server URL.
+        {timeout}                (number)                  HTTP request timeout in milliseconds.
+        {prefix}                 (string)                  Keymap prefix to open the Anki UI (default: `"<leader>a"`).
+        {default_mappings}       (boolean)                 Whether to auto-set the prefix keymap.
+        {gui_browse_enabled}     (boolean)                 Whether to open Anki GUI when sending/pulling notes.
+        {create_user_commands}   (boolean)                 Whether to create the `:Anki` user command.
+        {mappings}               (AnkiMappings)            Buffer-local keymappings for deck, note, and editor panes.
+        {note_formatter}         (fun(note:table):string)  Function to format a note for display in the note list.
+        {media_browser_preview}  (boolean)                 Use floating media browser with image preview when browsing Anki media (default: `true`). Falls back to vim.ui.select if disabled or if snacks.nvim image is unavailable.
+        {media_browser}          (AnkiMediaBrowserConfig)  Floating media browser window configuration.
+
+
+AnkiMediaBrowserConfig                      *anki.config.AnkiMediaBrowserConfig*
+
+    Fields: ~
+        {width}             (number)             Total width as fraction of &columns (default: `0.85`).
+        {height}            (number)             Total height as fraction of &lines (default: `0.8`).
+        {list_width}        (number)             List pane width as fraction of total width (default: `0.35`).
+        {border}            (string|table)       Border characters for nvim_open_win (default: `{ " ", " ", " ", " ", " ", " ", " ", " " }`).
+        {list_title}        (string)             Title for the media list window (default: `" Media "`).
+        {preview_title}     (string)             Title for the preview window (default: `" Preview "`).
+        {list_win_opts}     (table<string,any>)  Window-local options for the list pane (default: `{ cursorline = true, wrap = false }`).
+        {preview_win_opts}  (table<string,any>)  Window-local options for the preview pane (default: `{ wrap = false, number = false, relativenumber = false, signcolumn = "no" }`).
 
 
 AnkiMappings                                          *anki.config.AnkiMappings*
