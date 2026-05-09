@@ -77,6 +77,15 @@ function M.show_help(context)
 			m.kill_note .. " - Kill/Close the note editor",
 			m.attach_media .. " - Attach media (image/audio/video) [field buffers only]",
 		}
+	elseif context == "media_browser" then
+		help_lines = {
+			"Anki.nvim Help - Media Browser",
+			"",
+			"? - Show this help window",
+			"<Enter> - Insert selected media reference",
+			"q / <Esc> - Close the media browser",
+			"j/k - Navigate the file list",
+		}
 	end
 
 	local help_bufnr = vim.api.nvim_create_buf(false, true)

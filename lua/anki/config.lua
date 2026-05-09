@@ -15,6 +15,7 @@
 ---@field create_user_commands boolean Whether to create the `:Anki` user command.
 ---@field mappings AnkiMappings Buffer-local keymappings for deck, note, and editor panes.
 ---@field note_formatter fun(note: table): string Function to format a note for display in the note list.
+---@field media_browser_preview boolean Use floating media browser with image preview when browsing Anki media (default: `true`). Falls back to vim.ui.select if disabled or if snacks.nvim image is unavailable.
 
 ---@class AnkiMappings
 ---@field deck AnkiDeckMappings Deck pane keymaps.
@@ -68,6 +69,7 @@ M.defaults = {
 		end
 		return display
 	end,
+	media_browser_preview = true,
 	mappings = {
 		deck = {
 			show_help = "?",

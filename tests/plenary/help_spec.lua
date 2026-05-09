@@ -127,6 +127,27 @@ describe("anki.ui.help", function()
 		end)
 	end)
 
+	describe("show_help for media_browser", function()
+		it("does not error", function()
+			local _, err = get_help_lines("media_browser")
+			assert.is_nil(err)
+		end)
+
+		it("returns help lines referencing media browser keymaps", function()
+			local lines, err = get_help_lines("media_browser")
+			assert.is_nil(err)
+			assert.is_table(lines)
+
+			local found = {}
+			for _, line in ipairs(lines) do
+				found[line] = true
+			end
+			assert.is_true(found["? - Show this help window"] ~= nil)
+			assert.is_true(found["<Enter> - Insert selected media reference"] ~= nil)
+			assert.is_true(found["q / <Esc> - Close the media browser"] ~= nil)
+		end)
+	end)
+
 	describe("show_help with custom mappings", function()
 		it("reflects overridden mapping keys in help text", function()
 			config.setup({

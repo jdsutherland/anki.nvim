@@ -6,6 +6,7 @@
 --- All AnkiConnect calls are asynchronous using callbacks.
 ---
 local ankiconnect = require("anki.ankiconnect")
+local config = require("anki.config")
 local notification = require("anki.notification")
 local utils = require("anki.utils")
 
@@ -329,6 +330,8 @@ function M._attach_clipboard(bufnr)
 end
 
 --- Handles browsing and inserting existing media from Anki's collection.
+--- Uses the floating media browser with image preview when available,
+--- falls back to vim.ui.select otherwise.
 ---@param bufnr number The buffer to insert the reference into.
 function M._attach_browse(bufnr)
 	utils.async_safe_call(ankiconnect.get_media_files_names, { "*" }, function(media_files, error)
@@ -341,18 +344,24 @@ function M._attach_browse(bufnr)
 			return
 		end
 
-		table.sort(media_files)
-
-		vim.ui.select(media_files, {
-			prompt = "Select media file:",
-		}, function(filename)
-			if not filename then
-				return
-			end
+		if config.options.media_browser_preview then
+			local media_browser = require("anki.ui.media_browser")
 			vim.schedule(function()
-				M.insert_at_cursor(bufnr, M.media_reference(filename))
+				media_browser.open(bufnr, media_files)
 			end)
-		end)
+		else
+			table.sort(media_files)
+			vim.ui.select(media_files, {
+				prompt = "Select media file:",
+			}, function(filename)
+				if not filename then
+					return
+				end
+				vim.schedule(function()
+					M.insert_at_cursor(bufnr, M.media_reference(filename))
+				end)
+			end)
+		end
 	end)
 end
 

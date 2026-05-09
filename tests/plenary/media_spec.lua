@@ -112,6 +112,34 @@ describe("_attach_browse", function()
 
 		ankiconnect.get_media_files_names = original_fn
 	end)
+
+	it("config.media_browser_preview defaults to true", function()
+		local config = require("anki.config")
+		assert.is_true(config.defaults.media_browser_preview)
+	end)
+
+	it("can be set to false", function()
+		local config = require("anki.config")
+		local original = config.options.media_browser_preview
+		config.options.media_browser_preview = false
+		assert.is_false(config.options.media_browser_preview)
+		config.options.media_browser_preview = original
+	end)
+
+	it("does not error when callback accesses config.options.media_browser_preview", function()
+		local ankiconnect = require("anki.ankiconnect")
+		local original_fn = ankiconnect.get_media_files_names
+
+		ankiconnect.get_media_files_names = function(pattern, on_result)
+			on_result({ "test.png" }, nil)
+		end
+
+		assert.has_no.errors(function()
+			media._attach_browse(1)
+		end)
+
+		ankiconnect.get_media_files_names = original_fn
+	end)
 end)
 
 describe("Note.media", function()

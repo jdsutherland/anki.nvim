@@ -15,6 +15,7 @@ describe("anki.config", function()
 			assert.is_not_nil(config.defaults.create_user_commands)
 			assert.is_not_nil(config.defaults.mappings)
 			assert.is_not_nil(config.defaults.note_formatter)
+			assert.is_not_nil(config.defaults.media_browser_preview)
 		end)
 
 		it("has expected default values", function()
