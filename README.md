@@ -1,6 +1,6 @@
 # Anki.nvim
 
-Anki.nvim is a Neovim plugin that allows you to interact with Anki using [AnkiConnect](https://git.sr.ht/~foosoft/anki-connecthttps://git.sr.ht/~foosoft/anki-connect).
+Anki.nvim is a Neovim plugin that allows you to interact with Anki using [AnkiConnect](https://git.sr.ht/~foosoft/anki-connect).
 It allows you to create, edit, and manage your Anki notes and decks directly from neovim.
 
 ## Table of Contents
@@ -13,6 +13,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   [*Deck Browser Keymaps*](#deck-browser-keymaps)
 -   [*Note Browser Keymaps*](#note-browser-keymaps)
 -   [*Note Editor Keymaps*](#note-editor-keymaps)
+-   [*Programmatic API*](#programmatic-api)
 
 ## Features
 
@@ -23,7 +24,8 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   Model Selection: Choose the note model when creating notes.
 -   Profile Switching: Switch between different Anki profiles without leaving Neovim.
 -   Open in Anki GUI: Jump directly to the selected deck or note in the Anki desktop application.
--   Automatic UI Refresh: Deck and notes list refresh automatically after changes
+-   Media Attachments: Attach images, audio, and video to notes from local files, URLs, clipboard, or Anki's media collection.
+-   Automatic UI Refresh: Deck and notes list refresh automatically after changes.
 
 ## Dependencies
 
@@ -65,6 +67,14 @@ require("anki").setup({
   gui_browse_enabled = true,
   -- Whether to create the 'Anki' command
   create_user_commands = true,
+  -- Function to format a note for display in the note list
+  note_formatter = function(note)
+    local display = ""
+    for key, field in pairs(note.fields) do
+      display = display .. " [" .. key .. "]> " .. string.gsub(field.value, "[\r\n]", " ")
+    end
+    return display
+  end,
   -- Keymappings for the deck, note, and editor panes
   mappings = {
     deck = {
@@ -95,6 +105,7 @@ require("anki").setup({
       pull_note = "<leader>p",
       delete_note = "<leader>r",
       kill_note = "<leader>k",
+      attach_media = "<leader>m",
     },
   },
 })
@@ -138,7 +149,9 @@ These keymaps are configurable, see the `Configuration` section.
   | `<CR>` | Edit the selected note in the editor pane |
   | `d`    | Delete the selected note                  |
   | `o`    | Open the selected note in the Anki GUI    |
+  | `a`    | Show all notes across decks               |
   | `r`    | Refresh notes                             |
+  | `m`    | Move the selected note to another deck    |
 
 ### Note Editor Keymaps
 
@@ -146,7 +159,40 @@ These keymaps are configurable, see the `Configuration` section.
   |--------------|---------------------------------------------------|
   | `?`          | Show this help window                             |
   | `<leader>w`  | \*W\*rite/Send the current note to Anki           |
-  | `<leader>pw` | \*P\*ull the latest version of the note from Anki |
-  | `<leader>rw` | \*R\*emove/Delete the note from Anki              |
-  | `<leader>kw` | \*K\*ill/Close the note editor buffers            |
+  | `<leader>p`  | \*P\*ull the latest version of the note from Anki |
+  | `<leader>r`  | \*R\*emove/Delete the note from Anki              |
+  | `<leader>k`  | \*K\*ill/Close the note editor buffers            |
+  | `<leader>m`  | \*M\*edia/Attach media to the current field        |
+
+## Programmatic API
+
+The plugin exposes a `media` module via `require("anki").media` for programmatic use outside the UI:
+
+### `media.attach_media(bufnr)`
+
+Interactive media attachment. Prompts the user to select a source (local file, URL, clipboard image, or browse Anki media collection) and inserts the appropriate reference at the cursor position in the given buffer.
+
+### `media.upload_local_file(filepath, filename?, on_result)`
+
+Uploads a local file to Anki's media collection. `filepath` is an absolute path to the file on the machine running Anki. Calls `on_result(stored_filename)` on success or `on_result(nil)` on failure.
+
+### `media.upload_from_url(url, filename, on_result)`
+
+Downloads a file from a URL and stores it in Anki's media collection. Calls `on_result(stored_filename)` on success or `on_result(nil)` on failure.
+
+### `media.upload_from_data(filename, data, on_result)`
+
+Uploads base64-encoded data to Anki's media collection. `data` must be a base64-encoded string. Calls `on_result(stored_filename)` on success or `on_result(nil)` on failure.
+
+### `media.media_reference(filename)`
+
+Returns the Anki reference string for a given filename. Images return `<img src="filename">`, audio/video returns `[sound:filename]`, and unknown types default to `[sound:filename]`.
+
+### `media.detect_media_type(filename)`
+
+Returns `"image"`, `"audio"`, `"video"`, or `nil` based on the file extension.
+
+### `media.read_file_as_base64(filepath)`
+
+Reads a local file and returns its base64-encoded content, or `nil` on error.
 
