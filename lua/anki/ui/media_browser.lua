@@ -475,7 +475,7 @@ function M.open(bufnr, media_files)
 	})
 
 	setup_keymaps()
-	update_preview()
+	vim.schedule(update_preview)
 end
 
 --- Closes the media browser, cleaning up windows, buffers, and temp files.
