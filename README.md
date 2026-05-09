@@ -13,6 +13,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   [*Deck Browser Keymaps*](#deck-browser-keymaps)
 -   [*Note Browser Keymaps*](#note-browser-keymaps)
 -   [*Note Editor Keymaps*](#note-editor-keymaps)
+-   [*Media Browser Keymaps*](#media-browser-keymaps)
 
 ## Features
 
@@ -24,12 +25,17 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   Profile Switching: Switch between different Anki profiles without leaving Neovim.
 -   Open in Anki GUI: Jump directly to the selected deck or note in the Anki desktop application.
 -   Media Attachments: Attach images, audio, and video to notes from local files, URLs, clipboard, or Anki's media collection.
+-   Media Browser: Browse Anki's media collection in a floating two-pane window with image preview support via [snacks.nvim](https://github.com/folke/snacks.nvim).
 -   Automatic UI Refresh: Deck and notes list refresh automatically after changes.
 
 ## Dependencies
 
 -   [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
 -   [AnkiConnect](https://ankiweb.net/shared/info/2055492159) (Anki Add-on)
+
+### Optional
+
+-   [snacks.nvim](https://github.com/folke/snacks.nvim) — For image preview in the media browser. Falls back to a metadata-only display if not installed or if the terminal does not support image protocols.
 
 ## Installation
 
@@ -66,6 +72,9 @@ require("anki").setup({
   gui_browse_enabled = true,
   -- Whether to create the 'Anki' command
   create_user_commands = true,
+  -- Use the floating media browser with image preview when browsing Anki media.
+  -- Falls back to vim.ui.select if disabled or if snacks.nvim is unavailable.
+  media_browser_preview = true,
   -- Function to format a note for display in the note list
   note_formatter = function(note)
     local display = ""
@@ -74,6 +83,24 @@ require("anki").setup({
     end
     return display
   end,
+  -- Floating media browser window configuration
+  media_browser = {
+    -- Total width as fraction of &columns
+    width = 0.85,
+    -- Total height as fraction of &lines
+    height = 0.8,
+    -- List pane width as fraction of total width
+    list_width = 0.35,
+    -- Border characters for nvim_open_win (see :help nvim_open_win)
+    border = { " ", " ", " ", " ", " ", " ", " ", " " },
+    -- Window titles
+    list_title = " Media ",
+    preview_title = " Preview ",
+    -- Window-local options for the list pane
+    list_win_opts = { cursorline = true, wrap = false },
+    -- Window-local options for the preview pane
+    preview_win_opts = { wrap = false, number = false, relativenumber = false, signcolumn = "no" },
+  },
   -- Keymappings for the deck, note, and editor panes
   mappings = {
     deck = {
@@ -163,5 +190,16 @@ These keymaps are configurable, see the `Configuration` section.
   | `<leader>k`  | \*K\*ill/Close the note editor buffers            |
   | `<leader>m`  | \*M\*edia/Attach media to the current field        |
 
+### Media Browser Keymaps
 
+The media browser is a floating two-pane window (file list on the left, preview on the right) that opens when you select "Browse Anki media" from the media attachment menu. Images are previewed inline when [snacks.nvim](https://github.com/folke/snacks.nvim) is installed and the terminal supports image protocols; otherwise, file metadata (name, type, extension) is shown.
 
+  | Keymap    | Description                              |
+  |-----------|------------------------------------------|
+  | `<CR>`    | Insert the selected media reference      |
+  | `q`       | Close the media browser                  |
+  | `<Esc>`   | Close the media browser                  |
+  | `?`       | Show help window                        |
+  | `j`/`k`   | Navigate the file list (standard movement) |
+
+The media browser can be disabled (falling back to `vim.ui.select`) by setting `media_browser_preview = false` in the config. The window layout and appearance can be customized via the `media_browser` config table (see [Configuration](#configuration)).
