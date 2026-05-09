@@ -1,0 +1,12 @@
+anki	anki.txt	/*anki*
+anki.config	anki.txt	/*anki.config*
+anki.config.AnkiConfig	anki.txt	/*anki.config.AnkiConfig*
+anki.config.AnkiDeckMappings	anki.txt	/*anki.config.AnkiDeckMappings*
+anki.config.AnkiEditorMappings	anki.txt	/*anki.config.AnkiEditorMappings*
+anki.config.AnkiMappings	anki.txt	/*anki.config.AnkiMappings*
+anki.config.AnkiMediaBrowserConfig	anki.txt	/*anki.config.AnkiMediaBrowserConfig*
+anki.config.AnkiNoteMappings	anki.txt	/*anki.config.AnkiNoteMappings*
+anki.config.defaults	anki.txt	/*anki.config.defaults*
+anki.config.options	anki.txt	/*anki.config.options*
+anki.config.setup	anki.txt	/*anki.config.setup*
+anki.setup	anki.txt	/*anki.setup*

@@ -13,7 +13,7 @@ anki.nvim is a Neovim plugin for creating and managing Anki flashcards from the 
 - `lua/anki/classes/` — Class modules (EditorContext, Field, Note, UI)
 - `lua/anki/ui/` — UI operations (windows, operations, deck_ops, note_ops, profile_ops, help)
 - `tests/plenary/` — Test specs (classes_spec, config_spec, notification_spec, utils_spec)
-- `doc/` — Vim help docs (generated via `scripts/doc-gen.sh`)
+- `doc/` — Vim help docs and tags file (generated via `scripts/doc-gen.sh`)
 
 ## Build, Lint, and Test
 
@@ -39,7 +39,7 @@ Tests use `plenary.nvim` (busted-compatible): `describe`/`it`/`assert` with `lua
 bash scripts/doc-gen.sh
 ```
 
-Uses `vimcats` to generate `doc/anki.txt` from LuaCATS annotations in `init.lua` and `config.lua`.
+Uses `vimcats` to generate `doc/anki.txt` from LuaCATS annotations in `init.lua` and `config.lua`, then generates `doc/tags` via `:helptags` so `:help anki` works.
 
 ## Code Style
 

@@ -14,3 +14,6 @@ vimcats \
   > "$out"
 
 echo "Generated $out"
+
+nvim -es -c "helptags $root/doc" -c "q"
+echo "Generated $root/doc/tags"
