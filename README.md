@@ -13,7 +13,6 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   [*Deck Browser Keymaps*](#deck-browser-keymaps)
 -   [*Note Browser Keymaps*](#note-browser-keymaps)
 -   [*Note Editor Keymaps*](#note-editor-keymaps)
--   [*Programmatic API*](#programmatic-api)
 
 ## Features
 
@@ -164,35 +163,5 @@ These keymaps are configurable, see the `Configuration` section.
   | `<leader>k`  | \*K\*ill/Close the note editor buffers            |
   | `<leader>m`  | \*M\*edia/Attach media to the current field        |
 
-## Programmatic API
 
-The plugin exposes a `media` module via `require("anki").media` for programmatic use outside the UI:
-
-### `media.attach_media(bufnr)`
-
-Interactive media attachment. Prompts the user to select a source (local file, URL, clipboard image, or browse Anki media collection) and inserts the appropriate reference at the cursor position in the given buffer.
-
-### `media.upload_local_file(filepath, filename?, on_result)`
-
-Uploads a local file to Anki's media collection. `filepath` is an absolute path to the file on the machine running Anki. Calls `on_result(stored_filename)` on success or `on_result(nil)` on failure.
-
-### `media.upload_from_url(url, filename, on_result)`
-
-Downloads a file from a URL and stores it in Anki's media collection. Calls `on_result(stored_filename)` on success or `on_result(nil)` on failure.
-
-### `media.upload_from_data(filename, data, on_result)`
-
-Uploads base64-encoded data to Anki's media collection. `data` must be a base64-encoded string. Calls `on_result(stored_filename)` on success or `on_result(nil)` on failure.
-
-### `media.media_reference(filename)`
-
-Returns the Anki reference string for a given filename. Images return `<img src="filename">`, audio/video returns `[sound:filename]`, and unknown types default to `[sound:filename]`.
-
-### `media.detect_media_type(filename)`
-
-Returns `"image"`, `"audio"`, `"video"`, or `nil` based on the file extension.
-
-### `media.read_file_as_base64(filepath)`
-
-Reads a local file and returns its base64-encoded content, or `nil` on error.
 

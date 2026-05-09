@@ -18,7 +18,6 @@
 ---@brief ]]
 
 local config = require("anki.config")
-local media = require("anki.media")
 local operations = require("anki.ui.operations")
 
 local M = {}
@@ -63,7 +62,5 @@ function M.setup(opts)
 	setup_mappings()
 	setup_commands()
 end
-
-M.media = media
 
 return M
