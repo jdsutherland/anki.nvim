@@ -46,6 +46,7 @@ Using `lazy.nvim`:
   "0fflineuser/anki.nvim",
    dependencies = {
        "nvim-lua/plenary.nvim",
+       "folke/snacks.nvim" -- optional, for image preview
    },
   opts = {
     -- Your custom configuration goes here
@@ -91,8 +92,8 @@ require("anki").setup({
     height = 0.8,
     -- List pane width as fraction of total width
     list_width = 0.35,
-    -- Border characters for nvim_open_win (see :help nvim_open_win)
-    border = { " ", " ", " ", " ", " ", " ", " ", " " },
+    -- Border style for nvim_open_win (see :help nvim_open_win)
+    border = "single",
     -- Window titles
     list_title = " Media ",
     preview_title = " Preview ",
