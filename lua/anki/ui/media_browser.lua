@@ -130,7 +130,7 @@ local function recreate_preview_buf()
 		width = cfg.preview_width,
 		height = cfg.total_height,
 		row = cfg.start_row,
-		col = cfg.start_col + cfg.list_width + 3,
+		col = cfg.start_col + cfg.list_width + cfg.pane_gap,
 		style = "minimal",
 		border = cfg.border,
 		title = cfg.preview_title,
@@ -388,7 +388,7 @@ function M.open(bufnr, media_files)
 	local total_width = math.floor(vim.o.columns * mb.width)
 	local total_height = math.floor(vim.o.lines * mb.height)
 	local list_width = math.floor(total_width * mb.list_width)
-	local preview_width = total_width - list_width - 3
+	local preview_width = total_width - list_width - mb.pane_gap
 
 	local start_col = math.floor((vim.o.columns - total_width) / 2)
 	local start_row = math.floor((vim.o.lines - total_height) / 2)
@@ -400,6 +400,7 @@ function M.open(bufnr, media_files)
 		start_row = start_row,
 		start_col = start_col,
 		list_width = list_width,
+		pane_gap = mb.pane_gap,
 		border = mb.border,
 		list_title = mb.list_title,
 		preview_title = mb.preview_title,
@@ -442,7 +443,7 @@ function M.open(bufnr, media_files)
 		width = preview_width,
 		height = total_height,
 		row = start_row,
-		col = start_col + list_width + 3,
+		col = start_col + list_width + mb.pane_gap,
 		style = "minimal",
 		border = mb.border,
 		title = mb.preview_title,

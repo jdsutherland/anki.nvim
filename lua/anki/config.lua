@@ -22,6 +22,7 @@
 ---@field width number Total width as fraction of &columns (default: `0.85`).
 ---@field height number Total height as fraction of &lines (default: `0.8`).
 ---@field list_width number List pane width as fraction of total width (default: `0.35`).
+---@field pane_gap number Column offset between the list and preview panes (default: `2`). Controls the space consumed by borders/spacing between the two windows.
 ---@field border string|table Border characters for nvim_open_win (default: `"single"`).
 ---@field list_title string Title for the media list window (default: `" Media "`).
 ---@field preview_title string Title for the preview window (default: `" Preview "`).
@@ -85,6 +86,7 @@ M.defaults = {
 		width = 0.85,
 		height = 0.8,
 		list_width = 0.35,
+		pane_gap = 2,
 		border = "single",
 		list_title = " Media ",
 		preview_title = " Preview ",

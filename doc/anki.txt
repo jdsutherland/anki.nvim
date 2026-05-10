@@ -62,7 +62,8 @@ AnkiMediaBrowserConfig                      *anki.config.AnkiMediaBrowserConfig*
         {width}             (number)             Total width as fraction of &columns (default: `0.85`).
         {height}            (number)             Total height as fraction of &lines (default: `0.8`).
         {list_width}        (number)             List pane width as fraction of total width (default: `0.35`).
-        {border}            (string|table)       Border characters for nvim_open_win (default: `{ " ", " ", " ", " ", " ", " ", " ", " " }`).
+        {pane_gap}          (number)             Column offset between the list and preview panes (default: `2`). Controls the space consumed by borders/spacing between the two windows.
+        {border}            (string|table)       Border characters for nvim_open_win (default: `"single"`).
         {list_title}        (string)             Title for the media list window (default: `" Media "`).
         {preview_title}     (string)             Title for the preview window (default: `" Preview "`).
         {list_win_opts}     (table<string,any>)  Window-local options for the list pane (default: `{ cursorline = true, wrap = false }`).
