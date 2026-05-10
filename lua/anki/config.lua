@@ -22,7 +22,7 @@
 ---@field width number Total width as fraction of &columns (default: `0.85`).
 ---@field height number Total height as fraction of &lines (default: `0.8`).
 ---@field list_width number List pane width as fraction of total width (default: `0.35`).
----@field border string|table Border characters for nvim_open_win (default: `{ " ", " ", " ", " ", " ", " ", " ", " " }`).
+---@field border string|table Border characters for nvim_open_win (default: `"single"`).
 ---@field list_title string Title for the media list window (default: `" Media "`).
 ---@field preview_title string Title for the preview window (default: `" Preview "`).
 ---@field list_win_opts table<string,any> Window-local options for the list pane (default: `{ cursorline = true, wrap = false }`).
@@ -85,7 +85,7 @@ M.defaults = {
 		width = 0.85,
 		height = 0.8,
 		list_width = 0.35,
-		border = { " ", " ", " ", " ", " ", " ", " ", " " },
+		border = "single",
 		list_title = " Media ",
 		preview_title = " Preview ",
 		list_win_opts = { cursorline = true, wrap = false },
