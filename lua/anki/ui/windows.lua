@@ -94,6 +94,8 @@ function M.setup_deck_keymaps(bufnr)
 		gui_deck = "<Cmd>lua require('anki.ui.deck_ops').gui_deck()<CR>",
 		refresh_decks = "<Cmd>lua require('anki.ui.operations').refresh_decks()<CR>",
 		switch_profile = "<Cmd>lua require('anki.ui.profile_ops').switch_profile()<CR>",
+		edit_templates = "<Cmd>lua require('anki.ui.model_ops').edit_model_templates()<CR>",
+		create_model = "<Cmd>lua require('anki.ui.model_ops').create_model()<CR>",
 	}
 
 	for action, key in pairs(config.options.mappings.deck) do

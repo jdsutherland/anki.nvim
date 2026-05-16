@@ -33,9 +33,10 @@
 ---@field deck AnkiDeckMappings Deck pane keymaps.
 ---@field note AnkiNoteMappings Note pane keymaps.
 ---@field editor AnkiEditorMappings Editor pane keymaps.
+---@field template AnkiTemplateMappings Template editor keymaps.
 
 ---@class AnkiDeckMappings
----@field show_help string Show Help (default: `"?"`)
+---@field show_help string Show Help (default: `"g?"`)
 ---@field close string Close (default: `"q"`)
 ---@field select_deck string Select deck (default: `"<CR>"`)
 ---@field delete_deck string Delete deck (default: `"d"`)
@@ -45,9 +46,11 @@
 ---@field gui_deck string Open in Anki GUI (default: `"o"`)
 ---@field refresh_decks string Refresh decks (default: `"r"`)
 ---@field switch_profile string Switch profile (default: `"p"`)
+---@field edit_templates string Edit card templates (default: `"t"`)
+---@field create_model string Create new model/note type (default: `"T"`)
 
 ---@class AnkiNoteMappings
----@field show_help string Show Help (default: `"?"`)
+---@field show_help string Show Help (default: `"g?"`)
 ---@field close string Close (default: `"q"`)
 ---@field edit_note string Edit note (default: `"<CR>"`)
 ---@field delete_note string Delete note (default: `"d"`)
@@ -61,8 +64,15 @@
 ---@field pull_note string Pull note from Anki (default: `"<leader>p"`)
 ---@field delete_note string Delete note (default: `"<leader>r"`)
 ---@field kill_note string Close note buffer (default: `"<leader>k"`)
----@field show_help string Show Help (default: `"?"`)
+---@field show_help string Show help (default: `"g?"`)
 ---@field attach_media string Attach media to note (default: `"<leader>m"`)
+
+---@class AnkiTemplateMappings
+---@field save_template string Save template to Anki (default: `"<leader>w"`)
+---@field pull_template string Pull template from Anki (default: `"<leader>p"`)
+---@field switch_card string Switch card in multi-card models (default: `"<leader>s"`)
+---@field close_template string Close template editor (default: `"q"`)
+---@field show_help string Show help (default: `"g?"`)
 
 local M = {}
 
@@ -95,7 +105,7 @@ M.defaults = {
 	},
 	mappings = {
 		deck = {
-			show_help = "?",
+			show_help = "g?",
 			close = "q",
 			select_deck = "<CR>",
 			delete_deck = "d",
@@ -105,9 +115,11 @@ M.defaults = {
 			gui_deck = "o",
 			refresh_decks = "r",
 			switch_profile = "p",
+			edit_templates = "t",
+			create_model = "T",
 		},
 		note = {
-			show_help = "?",
+			show_help = "g?",
 			close = "q",
 			edit_note = "<CR>",
 			delete_note = "d",
@@ -121,8 +133,15 @@ M.defaults = {
 			pull_note = "<leader>p",
 			delete_note = "<leader>r",
 			kill_note = "<leader>k",
-			show_help = "?",
+			show_help = "g?",
 			attach_media = "<leader>m",
+		},
+		template = {
+			save_template = "<leader>w",
+			pull_template = "<leader>p",
+			switch_card = "<leader>s",
+			close_template = "q",
+			show_help = "g?",
 		},
 	},
 }

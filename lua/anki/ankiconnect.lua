@@ -325,4 +325,87 @@ M.delete_media_file = function(filename, on_result)
 	anki_connect_invoke_async({ action = "deleteMediaFile", params = { filename = filename } }, on_result)
 end
 
+---
+--- Gets the card templates for a model by name.
+--- Returns a table mapping card names to { Front, Back } template strings.
+---
+---@param modelName string The name of the model.
+---@param on_result function Callback: on_result(templates, error)
+M.model_templates = function(modelName, on_result)
+	if type(modelName) ~= "string" then
+		error("[anki.nvim][ankiconnect] Expected a string as modelName")
+	end
+	anki_connect_invoke_async({ action = "modelTemplates", params = { modelName = modelName } }, on_result)
+end
+
+---
+--- Gets the CSS styling for a model by name.
+---
+---@param modelName string The name of the model.
+---@param on_result function Callback: on_result(styling, error)
+M.model_styling = function(modelName, on_result)
+	if type(modelName) ~= "string" then
+		error("[anki.nvim][ankiconnect] Expected a string as modelName")
+	end
+	anki_connect_invoke_async({ action = "modelStyling", params = { modelName = modelName } }, on_result)
+end
+
+---
+--- Updates the templates of an existing model.
+--- Only specified cards and sides will be modified; unspecified ones are left unchanged.
+---
+---@param model table Table with `name` (string) and `templates` (table mapping card names to { Front, Back }).
+---@param on_result function Callback: on_result(result, error)
+M.update_model_templates = function(model, on_result)
+	if type(model) ~= "table" then
+		error("[anki.nvim][ankiconnect] Expected a table as model")
+	end
+	anki_connect_invoke_async({ action = "updateModelTemplates", params = { model = model } }, on_result)
+end
+
+---
+--- Updates the CSS styling of an existing model.
+---
+---@param model table Table with `name` (string) and `css` (string).
+---@param on_result function Callback: on_result(result, error)
+M.update_model_styling = function(model, on_result)
+	if type(model) ~= "table" then
+		error("[anki.nvim][ankiconnect] Expected a table as model")
+	end
+	anki_connect_invoke_async({ action = "updateModelStyling", params = { model = model } }, on_result)
+end
+
+---
+--- Creates a new model (note type) in Anki.
+---
+---@param modelName string The name for the new model.
+---@param inOrderFields table List of field names in order.
+---@param cardTemplates table List of card template tables. Each entry has optional `Name`, `Front`, and `Back` fields.
+---@param css string|nil Optional CSS styling. Defaults to Anki's default if not provided.
+---@param isCloze boolean|nil Whether this is a cloze model. Defaults to false.
+---@param on_result function Callback: on_result(result, error)
+M.create_model = function(modelName, inOrderFields, cardTemplates, css, isCloze, on_result)
+	if type(modelName) ~= "string" then
+		error("[anki.nvim][ankiconnect] Expected a string as modelName")
+	end
+	if type(inOrderFields) ~= "table" then
+		error("[anki.nvim][ankiconnect] Expected a table as inOrderFields")
+	end
+	if type(cardTemplates) ~= "table" then
+		error("[anki.nvim][ankiconnect] Expected a table as cardTemplates")
+	end
+	local params = {
+		modelName = modelName,
+		inOrderFields = inOrderFields,
+		cardTemplates = cardTemplates,
+	}
+	if css ~= nil then
+		params.css = css
+	end
+	if isCloze ~= nil then
+		params.isCloze = isCloze
+	end
+	anki_connect_invoke_async({ action = "createModel", params = params }, on_result)
+end
+
 return M

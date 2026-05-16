@@ -50,6 +50,8 @@ function M.show_help(context)
 			m.gui_deck .. " - Open in the Anki GUI",
 			m.refresh_decks .. " - Refresh Decks",
 			m.switch_profile .. " - Switch Profile",
+			m.edit_templates .. " - Edit card templates",
+			m.create_model .. " - Create new model/note type",
 		}
 	elseif context == "notes" then
 		local m = config.options.mappings.note
@@ -81,10 +83,21 @@ function M.show_help(context)
 		help_lines = {
 			"Anki.nvim Help - Media Browser",
 			"",
-			"? - Show this help window",
+			"g? - Show this help window",
 			"<Enter> - Insert selected media reference",
 			"q / <Esc> - Close the media browser",
 			"j/k - Navigate the file list",
+		}
+	elseif context == "templates" then
+		local m = config.options.mappings.template
+		help_lines = {
+			"Anki.nvim Help - Templates",
+			"",
+			m.show_help .. " - Show this help window",
+			m.save_template .. " - Save template changes to Anki",
+			m.pull_template .. " - Pull latest template from Anki",
+			m.switch_card .. " - Switch card (for multi-card models)",
+			m.close_template .. " - Close the template editor",
 		}
 	end
 

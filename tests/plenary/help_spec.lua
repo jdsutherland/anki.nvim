@@ -127,6 +127,30 @@ describe("anki.ui.help", function()
 		end)
 	end)
 
+	describe("show_help for templates", function()
+		it("does not error", function()
+			local _, err = get_help_lines("templates")
+			assert.is_nil(err)
+		end)
+
+		it("returns help lines referencing template mappings", function()
+			local lines, err = get_help_lines("templates")
+			assert.is_nil(err)
+			assert.is_table(lines)
+			assert.is_true(#lines > 0)
+
+			local found = {}
+			for _, line in ipairs(lines) do
+				found[line] = true
+			end
+			local m = config.options.mappings.template
+			assert.is_true(found[m.save_template .. " - Save template changes to Anki"] ~= nil)
+			assert.is_true(found[m.pull_template .. " - Pull latest template from Anki"] ~= nil)
+			assert.is_true(found[m.switch_card .. " - Switch card (for multi-card models)"] ~= nil)
+			assert.is_true(found[m.close_template .. " - Close the template editor"] ~= nil)
+		end)
+	end)
+
 	describe("show_help for media_browser", function()
 		it("does not error", function()
 			local _, err = get_help_lines("media_browser")
@@ -142,7 +166,7 @@ describe("anki.ui.help", function()
 			for _, line in ipairs(lines) do
 				found[line] = true
 			end
-			assert.is_true(found["? - Show this help window"] ~= nil)
+			assert.is_true(found["g? - Show this help window"] ~= nil)
 			assert.is_true(found["<Enter> - Insert selected media reference"] ~= nil)
 			assert.is_true(found["q / <Esc> - Close the media browser"] ~= nil)
 		end)

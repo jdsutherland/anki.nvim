@@ -8,6 +8,8 @@
 ---   • Pull existing notes from Anki for editing
 ---   • Attach media (images, audio, video) to notes from local files, URLs, clipboard, or Anki collection
 ---   • Deck management (create, rename, delete, switch profile)
+---   • Edit card templates (Front/Back HTML and CSS styling) for existing note types
+---   • Create new note types (models) with custom fields and card templates
 ---   • Integrates with AnkiConnect (requires Anki running locally)
 ---
 --- Quick start: >
