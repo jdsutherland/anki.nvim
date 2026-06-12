@@ -6,6 +6,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 ## Table of Contents
 
 -   [*Features*](#features)
+-   [*Quick Start (Nix)*](#quick-start-nix)
 -   [*Dependencies*](#dependencies)
 -   [*Installation*](#installation)
 -   [*Configuration*](#configuration)
@@ -28,6 +29,25 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   Media Attachments: Attach images, audio, and video to notes from local files, URLs, clipboard, or Anki's media collection.
 -   Media Browser: Browse Anki's media collection in a floating two-pane window with image preview support via [snacks.nvim](https://github.com/folke/snacks.nvim).
 -   Automatic UI Refresh: Deck and notes list refresh automatically after changes.
+
+## Quick Start (Nix)
+
+If you have [Nix](https://nixos.org) installed, you can try out the plugin without installing anything else:
+
+```bash
+nix develop github:0fflineuser/anki.nvim
+```
+
+This drops you into a shell with:
+
+-   **Neovim** — with anki.nvim, plenary.nvim, and snacks.nvim pre-installed and configured
+-   **Anki** — for running AnkiConnect locally
+-   **stylua** — Lua formatter (for development)
+-   **vimcats** — documentation generator (for development)
+
+Just run `nvim` inside the shell, then `:Anki` or `\a` (default `<leader>a` mapping with Neovim's default leader key `\`) to open the UI.
+
+> Note: Anki must be running with the [AnkiConnect](https://git.sr.ht/~foosoft/anki-connect) add-on installed for the plugin to work.
 
 ## Dependencies
 
