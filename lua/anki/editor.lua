@@ -142,6 +142,7 @@ function M.display_note(note)
 
 	local tags_bufnr = note.tags.bufnr
 	local tags_mappings = {
+		close = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", tags_bufnr),
 		send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", tags_bufnr),
 		pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", tags_bufnr),
 		delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", tags_bufnr),
@@ -153,14 +154,6 @@ function M.display_note(note)
 			vim.api.nvim_buf_set_keymap(tags_bufnr, "n", key, tags_mappings[action], { noremap = true, silent = true })
 		end
 	end
-
-	vim.api.nvim_buf_set_keymap(
-		tags_bufnr,
-		"n",
-		"q",
-		string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", tags_bufnr),
-		{ noremap = true, silent = true }
-	)
 
 	local tags_win = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(tags_win, tags_bufnr)
@@ -179,6 +172,7 @@ function M.display_note(note)
 		note.fields[i].editor_context.tabid = tabid
 
 		local field_mappings = {
+			close = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", field_bufnr),
 			send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", field_bufnr),
 			pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", field_bufnr),
 			delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", field_bufnr),
@@ -197,14 +191,6 @@ function M.display_note(note)
 				)
 			end
 		end
-
-		vim.api.nvim_buf_set_keymap(
-			field_bufnr,
-			"n",
-			"q",
-			string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", field_bufnr),
-			{ noremap = true, silent = true }
-		)
 	end
 end
 

@@ -114,6 +114,7 @@ AnkiNoteMappings                                  *anki.config.AnkiNoteMappings*
 AnkiEditorMappings                              *anki.config.AnkiEditorMappings*
 
     Fields: ~
+        {close}         (string)  Close note editor (default: `"q"`)
         {send_note}     (string)  Send note to Anki (default: `"<leader>w"`)
         {pull_note}     (string)  Pull note from Anki (default: `"<leader>p"`)
         {delete_note}   (string)  Delete note (default: `"<leader>r"`)

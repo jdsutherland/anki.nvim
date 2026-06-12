@@ -72,7 +72,7 @@ function M.show_help(context)
 			"Anki.nvim Help - Editor",
 			"",
 			m.show_help .. " - Show this help window",
-			"q - Close the note editor",
+			m.close .. " - Close the note editor",
 			m.send_note .. " - Write/Send note to Anki",
 			m.pull_note .. " - Pull note from Anki",
 			m.delete_note .. " - Remove/Delete note from Anki",

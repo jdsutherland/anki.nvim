@@ -60,6 +60,7 @@
 ---@field move_note_to_deck string Move note to another deck (default: `"m"`)
 
 ---@class AnkiEditorMappings
+---@field close string Close note editor (default: `"q"`)
 ---@field send_note string Send note to Anki (default: `"<leader>w"`)
 ---@field pull_note string Pull note from Anki (default: `"<leader>p"`)
 ---@field delete_note string Delete note (default: `"<leader>r"`)
@@ -128,6 +129,7 @@ M.defaults = {
 			move_note_to_deck = "m",
 		},
 		editor = {
+			close = "q",
 			send_note = "<leader>w",
 			pull_note = "<leader>p",
 			delete_note = "<leader>r",

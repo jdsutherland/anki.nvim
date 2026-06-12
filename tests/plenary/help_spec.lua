@@ -106,13 +106,13 @@ describe("anki.ui.help", function()
 			local m = config.options.mappings.editor
 			assert.is_true(found[m.show_help .. " - Show this help window"] ~= nil)
 			assert.is_true(found[m.send_note .. " - Write/Send note to Anki"] ~= nil)
-			assert.is_true(found["q - Close the note editor"] ~= nil)
+			assert.is_true(found[m.close .. " - Close the note editor"] ~= nil)
+			assert.is_true(found[m.send_note .. " - Write/Send note to Anki"] ~= nil)
 			assert.is_true(found[m.attach_media .. " - Attach media (image/audio/video) [field buffers only]"] ~= nil)
 		end)
 
-		it("does not reference a 'kill_note' or 'close' mapping key for editor context", function()
+		it("does not reference a 'kill_note' mapping key for editor context", function()
 			assert.is_nil(config.options.mappings.editor.kill_note)
-			assert.is_nil(config.options.mappings.editor.close)
 		end)
 	end)
 

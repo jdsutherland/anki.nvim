@@ -58,6 +58,7 @@ describe("anki.config", function()
 
 		it("has editor mapping keys", function()
 			local editor = config.defaults.mappings.editor
+			assert.is_not_nil(editor.close)
 			assert.is_not_nil(editor.send_note)
 			assert.is_not_nil(editor.pull_note)
 			assert.is_not_nil(editor.delete_note)
