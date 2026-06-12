@@ -152,6 +152,11 @@ end
 
 --- Closes the Anki UI window and cleans up buffers.
 function M.close()
+	local close_tabid = nil
+	if anki_state.ui.win_id and vim.api.nvim_win_is_valid(anki_state.ui.win_id) then
+		close_tabid = vim.api.nvim_win_get_tabpage(anki_state.ui.win_id)
+	end
+
 	if anki_state.ui.deck_buf_id and vim.api.nvim_buf_is_valid(anki_state.ui.deck_buf_id) then
 		vim.api.nvim_buf_delete(anki_state.ui.deck_buf_id, { force = true })
 	end
@@ -162,10 +167,9 @@ function M.close()
 	anki_state.ui.deck_buf_id = nil
 	anki_state.ui.note_buf_id = nil
 
-	if #vim.api.nvim_list_tabpages() > 1 then
-		vim.cmd("tabclose")
-	else
-		vim.cmd("enew")
+	if close_tabid and vim.api.nvim_tabpage_is_valid(close_tabid) then
+		local tab_number = vim.api.nvim_tabpage_get_number(close_tabid)
+		vim.cmd("tabclose " .. tab_number)
 	end
 end
 

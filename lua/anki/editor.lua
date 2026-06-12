@@ -225,12 +225,8 @@ function M.delete_note_buffers(note)
 	end
 
 	if tabid and vim.api.nvim_tabpage_is_valid(tabid) then
-		if #vim.api.nvim_list_tabpages() > 1 then
-			local tab_number = vim.api.nvim_tabpage_get_number(tabid)
-			vim.cmd("tabclose " .. tab_number)
-		else
-			vim.cmd("enew")
-		end
+		local tab_number = vim.api.nvim_tabpage_get_number(tabid)
+		vim.cmd("tabclose " .. tab_number)
 	end
 
 	anki_state.current_notes[tabid] = nil
@@ -268,12 +264,8 @@ function M.kill_all()
 
 	for _, tabid in ipairs(tabids) do
 		if vim.api.nvim_tabpage_is_valid(tabid) then
-			if #vim.api.nvim_list_tabpages() > 1 then
-				local tab_number = vim.api.nvim_tabpage_get_number(tabid)
-				vim.cmd("tabclose " .. tab_number)
-			else
-				vim.cmd("enew")
-			end
+			local tab_number = vim.api.nvim_tabpage_get_number(tabid)
+			vim.cmd("tabclose " .. tab_number)
 		end
 	end
 
