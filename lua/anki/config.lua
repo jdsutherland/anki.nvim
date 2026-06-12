@@ -13,7 +13,7 @@
 ---@field default_mappings boolean Whether to auto-set the prefix keymap.
 ---@field gui_browse_enabled boolean Whether to open Anki GUI when sending/pulling notes.
 ---@field create_user_commands boolean Whether to create the `:Anki` user command.
----@field mappings AnkiMappings Buffer-local keymappings for deck, note, and editor panes.
+---@field mappings AnkiMappings Buffer-local keymappings for deck browser, note browser, editor, and template contexts.
 ---@field note_formatter fun(note: table): string Function to format a note for display in the note list.
 ---@field media_browser_preview boolean Use floating media browser with image preview when browsing Anki media (default: `true`). Falls back to vim.ui.select if disabled or if snacks.nvim image is unavailable.
 ---@field media_browser AnkiMediaBrowserConfig Floating media browser window configuration.

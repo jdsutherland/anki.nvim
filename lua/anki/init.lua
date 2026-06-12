@@ -3,7 +3,7 @@
 --- anki.nvim — Create, review, and manage Anki flashcards directly from Neovim.
 ---
 --- Features:
----   • Browse decks and notes in a 3-pane split layout
+---   • Browse decks and notes in a two-pane browser tab, with note and template editing in separate tabs
 ---   • Create, edit, send, and delete notes without leaving Neovim
 ---   • Pull existing notes from Anki for editing
 ---   • Attach media (images, audio, video) to notes from local files, URLs, clipboard, or Anki collection

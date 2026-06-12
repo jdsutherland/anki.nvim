@@ -18,7 +18,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 
 ## Features
 
--   Three-pane UI: Navigate decks, notes, and edit content in a file-explorer-like interface within Neovim.
+-   Tab-based UI: Browse decks and notes in a two-pane browser tab (Decks on top, Notes on bottom), with note editing and template editing each opening in their own dedicated tabs. Multiple notes and templates can be edited simultaneously.
 -   Persistent 'Default' Deck: The 'Default' deck will always appear in the deck pane, even if deleted, because Anki automatically recreates it as needed.
 -   Deck Management: Create, rename, and delete Anki decks from within Neovim.
 -   Note Management: Create, edit, move and delete notes in any deck.
@@ -93,6 +93,8 @@ require("anki").setup({
     height = 0.8,
     -- List pane width as fraction of total width
     list_width = 0.35,
+    -- Column offset between list and preview panes (accounts for borders/spacing)
+    pane_gap = 2,
     -- Border style for nvim_open_win (see :help nvim_open_win)
     border = "single",
     -- Window titles
@@ -103,7 +105,7 @@ require("anki").setup({
     -- Window-local options for the preview pane
     preview_win_opts = { wrap = false, number = false, relativenumber = false, signcolumn = "no" },
   },
-  -- Keymappings for the deck, note, editor, and template panes
+  -- Keymappings for the deck browser, note browser, editor, and template contexts
   mappings = {
     deck = {
       show_help = "g?",
@@ -152,14 +154,15 @@ require("anki").setup({
 
 The plugin is centered around a single command, `:Anki`, which opens a dedicated UI in a new tab.
 
-This UI has three panes:
+This browser tab has a horizontal split layout:
 
--   **Notes** (top-left): A list of notes in the selected deck.
--   **Decks** (bottom-left): A file-explorer view of your decks.
--   **Editor** (right): Where the note editor opens.
+-   **Decks** (top): A list of your Anki decks.
+-   **Notes** (bottom): A list of notes in the selected deck.
 
-Each pane has its own set of keymaps.
-You can press `g?` in any pane to see the available shortcuts for that specific context.
+Editing notes and templates opens in their own separate tabs, and multiple notes or templates can be edited at the same time.
+
+Each context (deck browser, note browser, note editor, template editor) has its own set of keymaps.
+You can press `g?` in any context to see the available shortcuts for that specific context.
 These keymaps are configurable, see the `Configuration` section.
 
 ### Deck Browser Keymaps
@@ -185,7 +188,7 @@ These keymaps are configurable, see the `Configuration` section.
   |--------|-------------------------------------------|
   | `g?`   | Show this help window                     |
   | `q`    | Close the Anki UI tab                     |
-  | `<CR>` | Edit the selected note in the editor pane |
+  | `<CR>` | Edit the selected note in a new tab |
   | `d`    | Delete the selected note                  |
   | `o`    | Open the selected note in the Anki GUI    |
   | `a`    | Show all notes across decks               |
@@ -197,7 +200,7 @@ These keymaps are configurable, see the `Configuration` section.
   | Keymap       | Description                                       |
   |--------------|---------------------------------------------------|
   | `g?`         | Show this help window                             |
-  | `q`          | Close the note editor                             |
+  | `q`          | Close the note editor tab                        |
   | `<leader>w`  | \*W\*rite/Send the current note to Anki           |
   | `<leader>p`  | \*P\*ull the latest version of the note from Anki |
   | `<leader>r`  | \*R\*emove/Delete the note from Anki              |
@@ -208,7 +211,7 @@ These keymaps are configurable, see the `Configuration` section.
   | Keymap       | Description                                       |
   |--------------|---------------------------------------------------|
   | `g?`         | Show this help window                             |
-  | `q`          | Close the template editor                        |
+  | `q`          | Close the template editor tab                    |
   | `<leader>w`  | Save template changes to Anki                     |
   | `<leader>p`  | Pull the latest template from Anki                |
   | `<leader>s`  | Switch card (for multi-card models)                |
