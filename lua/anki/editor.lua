@@ -2,7 +2,8 @@
 --- anki.editor
 ---
 --- Provides functions for creating, displaying, and managing Anki notes and their buffers/windows in Neovim.
---- Handles editor window layout, buffer management, and note state.
+--- Each note opens in its own tab, allowing multiple notes to be edited simultaneously.
+--- State is tracked per-tabpage in anki_state.current_notes, keyed by tabpage ID.
 ---
 local anki_state = require("anki.state")
 local EditorContext = require("anki.classes.editor_context")
@@ -13,12 +14,74 @@ local config = require("anki.config")
 
 local M = {}
 
+--- Returns the note for the current tabpage, or nil if none.
+---@return Note|nil
+local function get_current_note()
+	local tabid = vim.api.nvim_get_current_tabpage()
+	return anki_state.current_notes[tabid]
+end
+
+--- Finds which note (if any) owns the given buffer number, searching all open note editors.
+---@param bufnr number The buffer number to search for.
+---@return Note|nil The note that contains this buffer, or nil.
+function M.find_note_by_bufnr(bufnr)
+	if type(bufnr) ~= "number" then
+		error("[anki.nvim][editor] find_note_by_bufnr: bufnr must be a number")
+	end
+	for _, note in pairs(anki_state.current_notes) do
+		if note.tags.bufnr == bufnr then
+			return note
+		end
+		for _, field in ipairs(note.fields) do
+			if field.editor_context.bufnr == bufnr then
+				return note
+			end
+		end
+	end
+	return nil
+end
+
+--- Searches for a note buffer by buffer number across all open note editors.
+---@param bufnr number The buffer number to search for.
+---@return number|nil 1 if found, nil otherwise.
+function M.search_for_note(bufnr)
+	if type(bufnr) ~= "number" then
+		error("[anki.nvim][editor] search_for_note: bufnr must be a number")
+	end
+	local note = M.find_note_by_bufnr(bufnr)
+	if note then
+		return 1
+	end
+	return nil
+end
+
+--- Checks if a note with the given noteId is already open in an editor tab.
+--- If found, switches to that tab and returns true.
+---@param note_id any The note ID to check.
+---@return boolean True if the note is already open (and tab was switched to).
+function M.focus_note_by_id(note_id)
+	if not note_id then
+		return false
+	end
+	for tabid, note in pairs(anki_state.current_notes) do
+		if note.id == note_id then
+			if vim.api.nvim_tabpage_is_valid(tabid) then
+				vim.api.nvim_set_current_tabpage(tabid)
+				return true
+			else
+				anki_state.current_notes[tabid] = nil
+			end
+		end
+	end
+	return false
+end
+
 --- Creates a new note object with the given deck, model, and fields.
--- @param deck_name string The name of the deck.
--- @param model_name string The name of the model.
--- @param field_names table List of field names.
--- @param id any Optional note ID.
--- @return table The created note object.
+---@param deck_name string The name of the deck.
+---@param model_name string The name of the model.
+---@param field_names table List of field names.
+---@param id any Optional note ID.
+---@return Note The created note object.
 function M.create_note(deck_name, model_name, field_names, id)
 	if type(deck_name) ~= "string" then
 		error("[anki.nvim][editor] create_note: deck_name must be a string")
@@ -36,8 +99,8 @@ function M.create_note(deck_name, model_name, field_names, id)
 			fields,
 			Field:new({
 				editor_context = EditorContext:new({
-					winid = vim.api.nvim_get_current_win(),
-					tabid = vim.api.nvim_get_current_tabpage(),
+					winid = 0,
+					tabid = 0,
 					bufnr = vim.api.nvim_create_buf(true, true),
 				}),
 				name = name,
@@ -48,8 +111,8 @@ function M.create_note(deck_name, model_name, field_names, id)
 	local note = Note:new({
 		fields = fields,
 		tags = EditorContext:new({
-			winid = vim.api.nvim_get_current_win(),
-			tabid = vim.api.nvim_get_current_tabpage(),
+			winid = 0,
+			tabid = 0,
 			bufnr = vim.api.nvim_create_buf(true, true),
 		}),
 		deck_name = deck_name,
@@ -57,35 +120,25 @@ function M.create_note(deck_name, model_name, field_names, id)
 		id = id,
 	})
 
-	anki_state.current_note = note
-
 	return note
 end
 
---- Displays the given note in the editor window, setting up splits and keymaps.
--- @param note table The note object to display.
+--- Displays the given note in a new editor tab, setting up splits and keymaps.
+---@param note Note The note object to display.
 function M.display_note(note)
 	if type(note) ~= "table" then
 		error("[anki.nvim][editor] display_note: note must be a table")
 	end
 	anki_state.counter = anki_state.counter + 1
 
-	local editor_win_id = anki_state.ui.editor_win_id
-	if not editor_win_id or not vim.api.nvim_win_is_valid(editor_win_id) then
-		vim.cmd("vnew")
-		editor_win_id = vim.api.nvim_get_current_win()
-		anki_state.ui.editor_win_id = editor_win_id
-	end
+	vim.cmd("tabnew")
+	local tabid = vim.api.nvim_get_current_tabpage()
 
-	vim.api.nvim_set_current_win(editor_win_id)
-	local new_tabid = vim.api.nvim_win_get_tabpage(editor_win_id)
-
-	note.tags.winid = editor_win_id
-	note.tags.tabid = new_tabid
+	anki_state.current_notes[tabid] = note
+	note.tabid = tabid
 
 	local counter = anki_state.counter
-	vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://Tags_" .. counter)
-	vim.api.nvim_win_set_buf(editor_win_id, note.tags.bufnr)
+	vim.api.nvim_buf_set_name(note.tags.bufnr, "anki://" .. tabid .. "/Tags_" .. counter)
 
 	local tags_bufnr = note.tags.bufnr
 	local tags_mappings = {
@@ -102,8 +155,30 @@ function M.display_note(note)
 		end
 	end
 
-	for _, field in ipairs(note.fields) do
-		local field_bufnr = field.editor_context.bufnr
+	vim.api.nvim_buf_set_keymap(
+		tags_bufnr,
+		"n",
+		"q",
+		string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", tags_bufnr),
+		{ noremap = true, silent = true }
+	)
+
+	local tags_win = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(tags_win, tags_bufnr)
+	note.tags.winid = tags_win
+	note.tags.tabid = tabid
+
+	for i = #note.fields, 1, -1 do
+		vim.cmd("split")
+		local new_win = vim.api.nvim_get_current_win()
+		local field_bufnr = note.fields[i].editor_context.bufnr
+		vim.api.nvim_set_option_value("filetype", "html", { buf = field_bufnr })
+		vim.api.nvim_buf_set_name(field_bufnr, "anki://" .. tabid .. "/" .. note.fields[i].name .. "_" .. counter)
+		vim.api.nvim_win_set_buf(new_win, field_bufnr)
+
+		note.fields[i].editor_context.winid = new_win
+		note.fields[i].editor_context.tabid = tabid
+
 		local field_mappings = {
 			send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", field_bufnr),
 			pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", field_bufnr),
@@ -124,140 +199,86 @@ function M.display_note(note)
 				)
 			end
 		end
-	end
 
-	for i = #note.fields, 1, -1 do
-		vim.cmd("split")
-		local new_win = vim.api.nvim_get_current_win()
-		vim.api.nvim_set_option_value("filetype", "html", { buf = note.fields[i].editor_context.bufnr })
-		vim.api.nvim_buf_set_name(
-			note.fields[i].editor_context.bufnr,
-			"anki://" .. note.fields[i].name .. "_" .. counter
+		vim.api.nvim_buf_set_keymap(
+			field_bufnr,
+			"n",
+			"q",
+			string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", field_bufnr),
+			{ noremap = true, silent = true }
 		)
-		vim.api.nvim_win_set_buf(new_win, note.fields[i].editor_context.bufnr)
-
-		note.fields[i].editor_context.winid = new_win
-		note.fields[i].editor_context.tabid = new_tabid
 	end
 end
 
---- Searches for a note buffer by buffer number.
--- @param bufnr number The buffer number to search for.
--- @return number|nil 1 if found, nil otherwise.
-function M.search_for_note(bufnr)
-	if type(bufnr) ~= "number" then
-		error("[anki.nvim][editor] search_for_note: bufnr must be a number")
-	end
-	if anki_state.current_note == nil then
-		return nil
-	end
-
-	if anki_state.current_note.tags.bufnr == bufnr then
-		return 1
-	end
-
-	for _, field in ipairs(anki_state.current_note.fields) do
-		if field.editor_context.bufnr == bufnr then
-			return 1
-		end
-	end
-
-	return nil
-end
-
---- Deletes all buffers and windows associated with a note.
--- @param note table The note object whose buffers should be deleted.
+--- Deletes all buffers associated with a note and closes its tab.
+---@param note Note The note object whose buffers and tab should be closed.
 function M.delete_note_buffers(note)
 	if type(note) ~= "table" then
 		error("[anki.nvim][editor] delete_note_buffers: note must be a table")
 	end
-	local survivor_win_id = anki_state.ui.editor_win_id
-	local windows_to_close = {}
 
-	if vim.api.nvim_win_is_valid(note.tags.winid) then
-		table.insert(windows_to_close, note.tags.winid)
-	end
-	for _, field in ipairs(note.fields) do
-		if vim.api.nvim_win_is_valid(field.editor_context.winid) then
-			table.insert(windows_to_close, field.editor_context.winid)
-		end
-	end
+	local tabid = note.tabid
 
-	-- Close all 'child' splits, leaving the main editor pane
-	for _, win_id in ipairs(windows_to_close) do
-		if win_id ~= survivor_win_id then
-			vim.api.nvim_win_close(win_id, true)
-		end
-	end
-
-	if survivor_win_id and vim.api.nvim_win_is_valid(survivor_win_id) then
-		local empty_buf = vim.api.nvim_create_buf(false, true)
-		vim.api.nvim_win_set_buf(survivor_win_id, empty_buf)
-		M.setup_editor_quit_keybinding()
-	end
-
-	-- Now that no windows are displaying them, delete the note's buffers
 	vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
 	for _, field in ipairs(note.fields) do
 		vim.api.nvim_buf_delete(field.editor_context.bufnr, { force = true })
 	end
+
+	if tabid and vim.api.nvim_tabpage_is_valid(tabid) then
+		if #vim.api.nvim_list_tabpages() > 1 then
+			local tab_number = vim.api.nvim_tabpage_get_number(tabid)
+			vim.cmd("tabclose " .. tab_number)
+		else
+			vim.cmd("enew")
+		end
+	end
+
+	anki_state.current_notes[tabid] = nil
 end
 
---- Kills (closes) the note buffer associated with the given buffer number.
--- @param bufnr number The buffer number to kill.
+--- Kills (closes) the note editor tab associated with the given buffer number.
+---@param bufnr number The buffer number to kill.
 function M.kill_note(bufnr)
-	local found = M.search_for_note(bufnr)
-	if not found then
+	local note = M.find_note_by_bufnr(bufnr)
+	if not note then
 		notification.warn("No Anki note buffer found")
 		return
 	end
 
-	local note_to_kill = anki_state.current_note
-
-	M.delete_note_buffers(note_to_kill)
-
-	anki_state.current_note = nil
-	notification.info("Note buffers killed")
-
-	M.setup_editor_quit_keybinding()
+	M.delete_note_buffers(note)
+	notification.info("Note editor closed")
 end
 
---- Kills (closes) all active note buffers and cleans up state.
+--- Kills (closes) all active note editor tabs and cleans up state.
 function M.kill_all()
-	if anki_state.current_note == nil then
-		notification.info("No active Anki notes to clean up.")
-		return
+	local tabids = {}
+	for tabid, note in pairs(anki_state.current_notes) do
+		vim.api.nvim_buf_delete(note.tags.bufnr, { force = true })
+		for _, field in ipairs(note.fields) do
+			vim.api.nvim_buf_delete(field.editor_context.bufnr, { force = true })
+		end
+		if vim.api.nvim_tabpage_is_valid(tabid) then
+			table.insert(tabids, tabid)
+		end
 	end
 
-	M.delete_note_buffers(anki_state.current_note)
+	table.sort(tabids, function(a, b)
+		return vim.api.nvim_tabpage_get_number(a) > vim.api.nvim_tabpage_get_number(b)
+	end)
 
-	anki_state.current_note = nil
-	notification.info("Cleaned up current Anki note.")
-
-	M.setup_editor_quit_keybinding()
-end
-
---- Sets up the 'q' keybinding in the editor window to allow quitting if no note is open.
-function M.setup_editor_quit_keybinding()
-	local editor_win_id = anki_state.ui.editor_win_id
-	if not editor_win_id or not vim.api.nvim_win_is_valid(editor_win_id) then
-		return
+	for _, tabid in ipairs(tabids) do
+		if vim.api.nvim_tabpage_is_valid(tabid) then
+			if #vim.api.nvim_list_tabpages() > 1 then
+				local tab_number = vim.api.nvim_tabpage_get_number(tabid)
+				vim.cmd("tabclose " .. tab_number)
+			else
+				vim.cmd("enew")
+			end
+		end
 	end
 
-	-- Only allow quit if no note is currently open
-	if anki_state.current_note ~= nil then
-		return
-	end
-
-	local current_bufnr = vim.api.nvim_win_get_buf(editor_win_id)
-
-	vim.api.nvim_buf_set_keymap(
-		current_bufnr,
-		"n",
-		"q",
-		"<Cmd>lua require('anki.ui.operations').close()<CR>",
-		{ noremap = true, silent = true }
-	)
+	anki_state.current_notes = {}
+	notification.info("All note editors closed")
 end
 
 return M

@@ -53,11 +53,12 @@ function M.check_anki_permissions(ankiconnect_module, on_result)
 	end)
 end
 
---- Creates the Anki UI layout with deck and note buffers in new windows.
+--- Creates the Anki UI layout with deck and note buffers in a new tab.
+--- The layout uses a top pane for decks and a bottom pane for notes (horizontal split).
+--- Note editors open in separate tabs.
 -- @return number The window ID of the deck window.
 function M.create_layout()
 	vim.cmd("tabnew")
-	anki_state.ui.editor_win_id = vim.api.nvim_get_current_win()
 
 	anki_state.ui.deck_buf_id = vim.api.nvim_create_buf(false, true)
 	anki_state.ui.note_buf_id = vim.api.nvim_create_buf(false, true)
@@ -65,7 +66,6 @@ function M.create_layout()
 	vim.api.nvim_buf_set_name(anki_state.ui.deck_buf_id, "Anki Decks")
 	vim.api.nvim_buf_set_name(anki_state.ui.note_buf_id, "Anki Notes")
 
-	vim.cmd("vnew")
 	local deck_win_id = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(deck_win_id, anki_state.ui.deck_buf_id)
 

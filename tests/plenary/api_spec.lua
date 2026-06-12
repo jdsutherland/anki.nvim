@@ -51,11 +51,13 @@ describe("anki.api", function()
 	describe("send_note", function()
 		it("calls process_send without error when note has no id (new note path)", function()
 			local note, field_bufnr, tags_bufnr = make_note_with_real_bufs()
-			anki_state.current_note = note
+			local tabid = 9999
+			anki_state.current_notes[tabid] = note
+			note.tabid = tabid
 
-			local original_search = editor.search_for_note
-			editor.search_for_note = function()
-				return 1
+			local original_find = editor.find_note_by_bufnr
+			editor.find_note_by_bufnr = function()
+				return note
 			end
 
 			local original_can_add = mock_ankiconnect_fn(
@@ -97,13 +99,13 @@ describe("anki.api", function()
 			assert.are.equal("table", type(received_media))
 			assert.are.equal("function", received_on_result_type)
 
-			editor.search_for_note = original_search
+			editor.find_note_by_bufnr = original_find
 			restore_ankiconnect_fn("can_add_notes_with_error_details", original_can_add)
 			restore_ankiconnect_fn("add_note", original_add_note)
 			restore_ankiconnect_fn("gui_browse", original_gui_browse)
 			operations.refresh_all = original_refresh
 			editor.delete_note_buffers = original_delete_note_buffers
-			anki_state.current_note = nil
+			anki_state.current_notes[tabid] = nil
 
 			pcall(vim.api.nvim_buf_delete, field_bufnr, { force = true })
 			pcall(vim.api.nvim_buf_delete, tags_bufnr, { force = true })
@@ -112,11 +114,13 @@ describe("anki.api", function()
 		it("calls process_send without error when note has an id that exists", function()
 			local note, field_bufnr, tags_bufnr = make_note_with_real_bufs()
 			note.id = 999
-			anki_state.current_note = note
+			local tabid = 9998
+			anki_state.current_notes[tabid] = note
+			note.tabid = tabid
 
-			local original_search = editor.search_for_note
-			editor.search_for_note = function()
-				return 1
+			local original_find = editor.find_note_by_bufnr
+			editor.find_note_by_bufnr = function()
+				return note
 			end
 
 			local original_find_notes = mock_ankiconnect_fn("find_notes", function(query, on_result)
@@ -152,14 +156,14 @@ describe("anki.api", function()
 				return false
 			end)
 
-			editor.search_for_note = original_search
+			editor.find_note_by_bufnr = original_find
 			restore_ankiconnect_fn("find_notes", original_find_notes)
 			restore_ankiconnect_fn("can_add_notes_with_error_details", original_can_add)
 			restore_ankiconnect_fn("update_note", original_update_note)
 			restore_ankiconnect_fn("gui_browse", original_gui_browse)
 			operations.refresh_all = original_refresh
 			editor.delete_note_buffers = original_delete_note_buffers
-			anki_state.current_note = nil
+			anki_state.current_notes[tabid] = nil
 
 			pcall(vim.api.nvim_buf_delete, field_bufnr, { force = true })
 			pcall(vim.api.nvim_buf_delete, tags_bufnr, { force = true })
@@ -168,11 +172,13 @@ describe("anki.api", function()
 		it("calls process_send without error when note id no longer exists in Anki", function()
 			local note, field_bufnr, tags_bufnr = make_note_with_real_bufs()
 			note.id = 999
-			anki_state.current_note = note
+			local tabid = 9997
+			anki_state.current_notes[tabid] = note
+			note.tabid = tabid
 
-			local original_search = editor.search_for_note
-			editor.search_for_note = function()
-				return 1
+			local original_find = editor.find_note_by_bufnr
+			editor.find_note_by_bufnr = function()
+				return note
 			end
 
 			local original_find_notes = mock_ankiconnect_fn("find_notes", function(query, on_result)
@@ -218,14 +224,14 @@ describe("anki.api", function()
 			assert.are.equal("table", type(received_media))
 			assert.are.equal("function", received_on_result_type)
 
-			editor.search_for_note = original_search
+			editor.find_note_by_bufnr = original_find
 			restore_ankiconnect_fn("find_notes", original_find_notes)
 			restore_ankiconnect_fn("can_add_notes_with_error_details", original_can_add)
 			restore_ankiconnect_fn("add_note", original_add_note)
 			restore_ankiconnect_fn("gui_browse", original_gui_browse)
 			operations.refresh_all = original_refresh
 			editor.delete_note_buffers = original_delete_note_buffers
-			anki_state.current_note = nil
+			anki_state.current_notes[tabid] = nil
 
 			pcall(vim.api.nvim_buf_delete, field_bufnr, { force = true })
 			pcall(vim.api.nvim_buf_delete, tags_bufnr, { force = true })

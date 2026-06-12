@@ -12,6 +12,7 @@ M.__index = M
 --- @field model_name string
 --- @field id integer
 --- @field media table|nil Inline media attachments for addNote (picture/audio/video arrays).
+--- @field tabid integer|nil Tabpage ID of the note editor.
 M.Note = M
 
 --- Creates a new Note class instance.

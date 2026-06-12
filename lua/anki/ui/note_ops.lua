@@ -3,13 +3,12 @@ local ankiconnect = require("anki.ankiconnect")
 local anki_state = require("anki.state")
 local editor = require("anki.editor")
 local operations = require("anki.ui.operations")
-local api = require("anki.api")
 local notification = require("anki.notification")
 
 local M = {}
 
---- Adds a new note to the specified deck, prompting for model and cleaning up the previous note if needed.
--- @param deck_name string|nil The name of the deck to add the note to. If nil, uses the current line.
+--- Adds a new note to the specified deck, prompting for model and opening in a new editor tab.
+---@param deck_name string|nil The name of the deck to add the note to. If nil, uses the current line.
 function M.add_note(deck_name)
 	if not deck_name then
 		deck_name = vim.api.nvim_get_current_line()
@@ -18,45 +17,29 @@ function M.add_note(deck_name)
 		return
 	end
 
-	local function create_new_note()
-		utils.async_safe_call(ankiconnect.model_names, nil, function(model_names, error)
-			if error or not model_names then
+	utils.async_safe_call(ankiconnect.model_names, nil, function(model_names, error)
+		if error or not model_names then
+			return
+		end
+
+		vim.ui.select(model_names, { prompt = "Select a model" }, function(model_name)
+			if not model_name then
 				return
 			end
-
-			vim.ui.select(model_names, { prompt = "Select a model" }, function(model_name)
-				if not model_name then
+			utils.async_safe_call(ankiconnect.model_field_names, { model_name }, function(field_names, err2)
+				if err2 or not field_names then
 					return
 				end
-				utils.async_safe_call(ankiconnect.model_field_names, { model_name }, function(field_names, err2)
-					if err2 or not field_names then
-						return
-					end
-					local note = editor.create_note(deck_name, model_name, field_names)
-					editor.display_note(note)
-					operations.refresh_all()
-				end)
+				local note = editor.create_note(deck_name, model_name, field_names)
+				editor.display_note(note)
+				operations.refresh_all()
 			end)
 		end)
-	end
-
-	if anki_state.current_note then
-		vim.ui.input({ prompt = "Save changes to current note before opening new one? (Y/n)" }, function(input)
-			if input == nil then
-				return
-			end
-			if input == "Y" or input == "y" then
-				api.send_note(anki_state.current_note.tags.bufnr)
-			end
-			editor.delete_note_buffers(anki_state.current_note)
-			create_new_note()
-		end)
-	else
-		create_new_note()
-	end
+	end)
 end
 
---- Edits the note at the current cursor line, handling unsaved changes if another note is open.
+--- Edits the note at the current cursor line, opening it in a new editor tab.
+--- If the note is already open in another tab, switches to that tab instead.
 function M.edit_note()
 	local line_num = vim.api.nvim_win_get_cursor(0)[1]
 	local note = anki_state.ui.notes[line_num]
@@ -64,30 +47,17 @@ function M.edit_note()
 		return
 	end
 
-	if anki_state.current_note then
-		vim.ui.input({ prompt = "Save changes to current note before opening new one? (Y/n)" }, function(input)
-			if input == nil then
-				return
-			end
-			if input == "Y" or input == "y" then
-				api.send_note(anki_state.current_note.tags.bufnr)
-			end
-			M.switch_to_new_note(note)
-			operations.refresh_all()
-		end)
-	else
-		M.switch_to_new_note(note)
-		operations.refresh_all()
+	if editor.focus_note_by_id(note.noteId) then
+		return
 	end
+
+	M.open_note_in_editor(note)
+	operations.refresh_all()
 end
 
---- Switches the editor context to a new note, cleaning up the previous note if needed.
--- @param note table The note object to switch to.
-function M.switch_to_new_note(note)
-	if anki_state.current_note then
-		editor.delete_note_buffers(anki_state.current_note)
-	end
-
+--- Opens a note in a new editor tab with its content populated from Anki data.
+---@param note table The note info object from AnkiConnect (with fields, tags, etc.).
+function M.open_note_in_editor(note)
 	local sorted_fields = {}
 	for key, field in pairs(note.fields) do
 		sorted_fields[field.order + 1] = {
@@ -104,8 +74,13 @@ function M.switch_to_new_note(note)
 	end
 
 	local deck_win_id = vim.fn.bufwinid(anki_state.ui.deck_buf_id)
-	local cursor_line = vim.api.nvim_win_get_cursor(deck_win_id)[1]
-	local deck_name = vim.api.nvim_buf_get_lines(anki_state.ui.deck_buf_id, cursor_line - 1, cursor_line, true)[1]
+	local deck_name
+	if deck_win_id ~= -1 then
+		local cursor_line = vim.api.nvim_win_get_cursor(deck_win_id)[1]
+		deck_name = vim.api.nvim_buf_get_lines(anki_state.ui.deck_buf_id, cursor_line - 1, cursor_line, true)[1]
+	else
+		deck_name = note.deckName or note.modelName
+	end
 
 	local new_note = editor.create_note(deck_name, note.modelName, fields_names, note.noteId)
 

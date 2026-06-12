@@ -92,18 +92,20 @@ function M.switch_profile()
 						end)
 					end
 
-					if anki_state.current_note then
+					if next(anki_state.current_notes) then
 						vim.ui.input(
-							{ prompt = "Save changes to current note before switching profile? (Y/n): " },
+							{ prompt = "Save changes to open notes before switching profile? (Y/n): " },
 							function(input)
 								if input == nil then
 									return
 								end
 
 								if input == "Y" or input == "y" or input == "" then
-									api.send_note(anki_state.current_note.tags.bufnr)
+									for _, note in pairs(anki_state.current_notes) do
+										api.send_note(note.tags.bufnr)
+									end
 								end
-								editor.kill_note(anki_state.current_note.tags.bufnr)
+								editor.kill_all()
 								do_profile_switch()
 							end
 						)

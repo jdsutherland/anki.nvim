@@ -166,13 +166,12 @@ M.send_note = function(bufnr, kill)
 	if kill ~= nil and type(kill) ~= "boolean" then
 		error("[anki.nvim][api] send_note: kill must be a boolean or nil")
 	end
-	local found = editor.search_for_note(bufnr)
-	if not found then
+	local note_to_send = editor.find_note_by_bufnr(bufnr)
+	if not note_to_send then
 		notification.warn("[anki.nvim][api] No Anki note buffer found")
 		return
 	end
 
-	local note_to_send = anki_state.current_note
 	local content = note_to_send:get_content_from_buffers()
 	local fields = content.fields
 	local tags = content.tags
@@ -181,7 +180,6 @@ M.send_note = function(bufnr, kill)
 	local function cleanup_and_notify()
 		if kill then
 			editor.delete_note_buffers(note_to_send)
-			anki_state.current_note = nil
 		end
 		notify_user(is_new_note)
 		operations.refresh_all()
@@ -263,13 +261,12 @@ M.pull_note = function(bufnr)
 	if type(bufnr) ~= "number" then
 		error("[anki.nvim][api] pull_note: bufnr must be a number")
 	end
-	local found = editor.search_for_note(bufnr)
-	if not found then
+	local note_to_pull = editor.find_note_by_bufnr(bufnr)
+	if not note_to_pull then
 		notification.warn("[anki.nvim][api] No Anki note buffer found")
 		return
 	end
 
-	local note_to_pull = anki_state.current_note
 	if not note_to_pull.id then
 		notification.error("[anki.nvim][api] Cannot pull note, it was not sent to Anki yet")
 		return
@@ -312,13 +309,12 @@ M.delete_note = function(bufnr)
 	if type(bufnr) ~= "number" then
 		error("[anki.nvim][api] delete_note: bufnr must be a number")
 	end
-	local found = editor.search_for_note(bufnr)
-	if not found then
+	local note_to_delete = editor.find_note_by_bufnr(bufnr)
+	if not note_to_delete then
 		notification.warn("[anki.nvim][api] No Anki note buffer found")
 		return
 	end
 
-	local note_to_delete = anki_state.current_note
 	if note_to_delete.id == nil then
 		notification.warn("[anki.nvim][api] Cannot delete note, it was not sent to Anki yet")
 		return

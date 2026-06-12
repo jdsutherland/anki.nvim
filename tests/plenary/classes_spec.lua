@@ -218,7 +218,6 @@ describe("UI", function()
 			win_id = 1,
 			deck_buf_id = 2,
 			note_buf_id = 3,
-			editor_win_id = 4,
 			notes = { "note1" },
 			decks = { "deck1" },
 			current_filter = nil,
@@ -226,7 +225,6 @@ describe("UI", function()
 		assert.are.equal(1, ui.win_id)
 		assert.are.equal(2, ui.deck_buf_id)
 		assert.are.equal(3, ui.note_buf_id)
-		assert.are.equal(4, ui.editor_win_id)
 		assert.are.equal(1, #ui.notes)
 		assert.are.equal(1, #ui.decks)
 	end)

@@ -20,6 +20,6 @@ if [ -z "$STAGED_LUA_FILES" ]; then
   exit 0
 fi
 # Format staged .lua files
-echo "$STAGED_LUA_FILES" | xargs /usr/bin/stylua
+echo "$STAGED_LUA_FILES" | xargs stylua
 # Add back the formatted files
 echo "$STAGED_LUA_FILES" | xargs git add

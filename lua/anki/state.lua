@@ -11,20 +11,19 @@ local UI = require("anki.classes.ui")
 
 ---@class AnkiState
 ---@field counter number
----@field current_note Note | nil
+---@field current_notes table<integer, Note> Per-tabpage note editor state.
 ---@field current_template table<integer, AnkiTemplateState> Per-tabpage template editor state.
 ---@field ui UI
 local M = {
 	counter = 0,
-	current_note = nil,
+	current_notes = {},
 	current_template = {},
 	ui = UI:new({
 		win_id = nil,
 		deck_buf_id = nil,
 		note_buf_id = nil,
-		editor_win_id = nil,
 		notes = {},
-		current_filter = nil, -- Track: nil=all, deck_name=filtered
+		current_filter = nil,
 	}),
 }
 

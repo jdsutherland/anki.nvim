@@ -2,7 +2,6 @@ local anki_state = require("anki.state")
 local config = require("anki.config")
 local utils = require("anki.utils")
 local ankiconnect = require("anki.ankiconnect")
-local editor = require("anki.editor")
 
 local M = {}
 
@@ -147,8 +146,6 @@ function M.open()
 			end)
 
 			anki_state.ui.win_id = deck_win_id
-
-			editor.setup_editor_quit_keybinding()
 		end)
 	end)
 end
@@ -164,9 +161,12 @@ function M.close()
 	anki_state.ui.win_id = nil
 	anki_state.ui.deck_buf_id = nil
 	anki_state.ui.note_buf_id = nil
-	anki_state.ui.editor_win_id = nil
 
-	vim.cmd("tabclose")
+	if #vim.api.nvim_list_tabpages() > 1 then
+		vim.cmd("tabclose")
+	else
+		vim.cmd("enew")
+	end
 end
 
 return M

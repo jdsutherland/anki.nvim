@@ -3,7 +3,7 @@ local anki_state = require("anki.state")
 describe("anki.state with template support", function()
 	before_each(function()
 		anki_state.counter = 0
-		anki_state.current_note = nil
+		anki_state.current_notes = {}
 		anki_state.current_template = {}
 	end)
 
