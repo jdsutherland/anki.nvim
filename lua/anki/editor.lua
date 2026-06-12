@@ -145,7 +145,6 @@ function M.display_note(note)
 		send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", tags_bufnr),
 		pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", tags_bufnr),
 		delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", tags_bufnr),
-		kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", tags_bufnr),
 		show_help = string.format("<Cmd>lua require('anki.ui.help').show_help('editor')<CR>"),
 	}
 
@@ -183,7 +182,6 @@ function M.display_note(note)
 			send_note = string.format("<Cmd>lua require('anki.api').send_note(%d)<CR>", field_bufnr),
 			pull_note = string.format("<Cmd>lua require('anki.api').pull_note(%d)<CR>", field_bufnr),
 			delete_note = string.format("<Cmd>lua require('anki.api').delete_note(%d)<CR>", field_bufnr),
-			kill_note = string.format("<Cmd>lua require('anki.editor').kill_note(%d)<CR>", field_bufnr),
 			show_help = string.format("<Cmd>lua require('anki.ui.help').show_help('editor')<CR>"),
 			attach_media = string.format("<Cmd>lua require('anki.media').attach_media(%d)<CR>", field_bufnr),
 		}

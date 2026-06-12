@@ -106,23 +106,12 @@ describe("anki.ui.help", function()
 			local m = config.options.mappings.editor
 			assert.is_true(found[m.show_help .. " - Show this help window"] ~= nil)
 			assert.is_true(found[m.send_note .. " - Write/Send note to Anki"] ~= nil)
-			assert.is_true(found[m.kill_note .. " - Kill/Close the note editor"] ~= nil)
+			assert.is_true(found["q - Close the note editor"] ~= nil)
 			assert.is_true(found[m.attach_media .. " - Attach media (image/audio/video) [field buffers only]"] ~= nil)
 		end)
 
-		it("includes hardcoded q close mapping instead of config close key", function()
-			local lines, err = get_help_lines("editor")
-			assert.is_nil(err)
-			local has_q_close = false
-			for _, line in ipairs(lines) do
-				if line:find("^q %- Close") then
-					has_q_close = true
-				end
-			end
-			assert.is_true(has_q_close)
-		end)
-
-		it("does not reference a 'close' mapping key for editor context", function()
+		it("does not reference a 'kill_note' or 'close' mapping key for editor context", function()
+			assert.is_nil(config.options.mappings.editor.kill_note)
 			assert.is_nil(config.options.mappings.editor.close)
 		end)
 	end)

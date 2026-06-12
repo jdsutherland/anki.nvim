@@ -72,11 +72,10 @@ function M.show_help(context)
 			"Anki.nvim Help - Editor",
 			"",
 			m.show_help .. " - Show this help window",
-			"q - Close the Anki UI tab (when no note is open)",
+			"q - Close the note editor",
 			m.send_note .. " - Write/Send note to Anki",
 			m.pull_note .. " - Pull note from Anki",
 			m.delete_note .. " - Remove/Delete note from Anki",
-			m.kill_note .. " - Kill/Close the note editor",
 			m.attach_media .. " - Attach media (image/audio/video) [field buffers only]",
 		}
 	elseif context == "media_browser" then

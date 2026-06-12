@@ -6,6 +6,7 @@ anki.config.AnkiEditorMappings	anki.txt	/*anki.config.AnkiEditorMappings*
 anki.config.AnkiMappings	anki.txt	/*anki.config.AnkiMappings*
 anki.config.AnkiMediaBrowserConfig	anki.txt	/*anki.config.AnkiMediaBrowserConfig*
 anki.config.AnkiNoteMappings	anki.txt	/*anki.config.AnkiNoteMappings*
+anki.config.AnkiTemplateMappings	anki.txt	/*anki.config.AnkiTemplateMappings*
 anki.config.defaults	anki.txt	/*anki.config.defaults*
 anki.config.options	anki.txt	/*anki.config.options*
 anki.config.setup	anki.txt	/*anki.config.setup*

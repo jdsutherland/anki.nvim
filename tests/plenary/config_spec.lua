@@ -61,7 +61,6 @@ describe("anki.config", function()
 			assert.is_not_nil(editor.send_note)
 			assert.is_not_nil(editor.pull_note)
 			assert.is_not_nil(editor.delete_note)
-			assert.is_not_nil(editor.kill_note)
 			assert.is_not_nil(editor.show_help)
 		end)
 

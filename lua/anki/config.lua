@@ -63,7 +63,6 @@
 ---@field send_note string Send note to Anki (default: `"<leader>w"`)
 ---@field pull_note string Pull note from Anki (default: `"<leader>p"`)
 ---@field delete_note string Delete note (default: `"<leader>r"`)
----@field kill_note string Close note buffer (default: `"<leader>k"`)
 ---@field show_help string Show help (default: `"g?"`)
 ---@field attach_media string Attach media to note (default: `"<leader>m"`)
 
@@ -132,7 +131,6 @@ M.defaults = {
 			send_note = "<leader>w",
 			pull_note = "<leader>p",
 			delete_note = "<leader>r",
-			kill_note = "<leader>k",
 			show_help = "g?",
 			attach_media = "<leader>m",
 		},

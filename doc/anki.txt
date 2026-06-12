@@ -9,6 +9,8 @@ anki.nvim                                                                 *anki*
    • Pull existing notes from Anki for editing
    • Attach media (images, audio, video) to notes from local files, URLs, clipboard, or Anki collection
    • Deck management (create, rename, delete, switch profile)
+   • Edit card templates (Front/Back HTML and CSS styling) for existing note types
+   • Create new note types (models) with custom fields and card templates
    • Integrates with AnkiConnect (requires Anki running locally)
 
  Quick start: >
@@ -73,15 +75,16 @@ AnkiMediaBrowserConfig                      *anki.config.AnkiMediaBrowserConfig*
 AnkiMappings                                          *anki.config.AnkiMappings*
 
     Fields: ~
-        {deck}    (AnkiDeckMappings)    Deck pane keymaps.
-        {note}    (AnkiNoteMappings)    Note pane keymaps.
-        {editor}  (AnkiEditorMappings)  Editor pane keymaps.
+        {deck}      (AnkiDeckMappings)      Deck pane keymaps.
+        {note}      (AnkiNoteMappings)      Note pane keymaps.
+        {editor}    (AnkiEditorMappings)    Editor pane keymaps.
+        {template}  (AnkiTemplateMappings)  Template editor keymaps.
 
 
 AnkiDeckMappings                                  *anki.config.AnkiDeckMappings*
 
     Fields: ~
-        {show_help}       (string)  Show Help (default: `"?"`)
+        {show_help}       (string)  Show Help (default: `"g?"`)
         {close}           (string)  Close (default: `"q"`)
         {select_deck}     (string)  Select deck (default: `"<CR>"`)
         {delete_deck}     (string)  Delete deck (default: `"d"`)
@@ -91,12 +94,14 @@ AnkiDeckMappings                                  *anki.config.AnkiDeckMappings*
         {gui_deck}        (string)  Open in Anki GUI (default: `"o"`)
         {refresh_decks}   (string)  Refresh decks (default: `"r"`)
         {switch_profile}  (string)  Switch profile (default: `"p"`)
+        {edit_templates}  (string)  Edit card templates (default: `"t"`)
+        {create_model}    (string)  Create new model/note type (default: `"T"`)
 
 
 AnkiNoteMappings                                  *anki.config.AnkiNoteMappings*
 
     Fields: ~
-        {show_help}          (string)  Show Help (default: `"?"`)
+        {show_help}          (string)  Show Help (default: `"g?"`)
         {close}              (string)  Close (default: `"q"`)
         {edit_note}          (string)  Edit note (default: `"<CR>"`)
         {delete_note}        (string)  Delete note (default: `"d"`)
@@ -112,9 +117,18 @@ AnkiEditorMappings                              *anki.config.AnkiEditorMappings*
         {send_note}     (string)  Send note to Anki (default: `"<leader>w"`)
         {pull_note}     (string)  Pull note from Anki (default: `"<leader>p"`)
         {delete_note}   (string)  Delete note (default: `"<leader>r"`)
-        {kill_note}     (string)  Close note buffer (default: `"<leader>k"`)
-        {show_help}     (string)  Show Help (default: `"?"`)
+        {show_help}     (string)  Show help (default: `"g?"`)
         {attach_media}  (string)  Attach media to note (default: `"<leader>m"`)
+
+
+AnkiTemplateMappings                          *anki.config.AnkiTemplateMappings*
+
+    Fields: ~
+        {save_template}   (string)  Save template to Anki (default: `"<leader>w"`)
+        {pull_template}   (string)  Pull template from Anki (default: `"<leader>p"`)
+        {switch_card}     (string)  Switch card in multi-card models (default: `"<leader>s"`)
+        {close_template}  (string)  Close template editor (default: `"q"`)
+        {show_help}       (string)  Show help (default: `"g?"`)
 
 
 M.defaults                                                *anki.config.defaults*
