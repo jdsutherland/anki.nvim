@@ -13,6 +13,7 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   [*Deck Browser Keymaps*](#deck-browser-keymaps)
 -   [*Note Browser Keymaps*](#note-browser-keymaps)
 -   [*Note Editor Keymaps*](#note-editor-keymaps)
+-   [*Template Editor Keymaps*](#template-editor-keymaps)
 -   [*Media Browser Keymaps*](#media-browser-keymaps)
 
 ## Features
@@ -102,10 +103,10 @@ require("anki").setup({
     -- Window-local options for the preview pane
     preview_win_opts = { wrap = false, number = false, relativenumber = false, signcolumn = "no" },
   },
-  -- Keymappings for the deck, note, and editor panes
+  -- Keymappings for the deck, note, editor, and template panes
   mappings = {
     deck = {
-      show_help = "?",
+      show_help = "g?",
       close = "q",
       select_deck = "<CR>",
       delete_deck = "d",
@@ -115,9 +116,11 @@ require("anki").setup({
       gui_deck = "o",
       refresh_decks = "r",
       switch_profile = "p",
+      edit_templates = "t",
+      create_model = "T",
     },
     note = {
-      show_help = "?",
+      show_help = "g?",
       close = "q",
       edit_note = "<CR>",
       delete_note = "d",
@@ -127,12 +130,19 @@ require("anki").setup({
       move_note_to_deck = "m",
     },
     editor = {
-      show_help = "?",
+      close = "q",
+      show_help = "g?",
       send_note = "<leader>w",
       pull_note = "<leader>p",
       delete_note = "<leader>r",
-      kill_note = "<leader>k",
       attach_media = "<leader>m",
+    },
+    template = {
+      save_template = "<leader>w",
+      pull_template = "<leader>p",
+      switch_card = "<leader>s",
+      close_template = "q",
+      show_help = "g?",
     },
   },
 })
@@ -149,14 +159,14 @@ This UI has three panes:
 -   **Editor** (right): Where the note editor opens.
 
 Each pane has its own set of keymaps.
-You can press `?` in any pane to see the available shortcuts for that specific context.
+You can press `g?` in any pane to see the available shortcuts for that specific context.
 These keymaps are configurable, see the `Configuration` section.
 
 ### Deck Browser Keymaps
 
  | Keymap | Description                             |
  |--------|-----------------------------------------|
- | `?`    | Show this help window                   |
+ | `g?`   | Show this help window                   |
  | `q`    | Close the Anki UI tab                   |
  | `<CR>` | Select a deck and show its notes        |
  | `d`    | Delete deck under cursor                |
@@ -166,12 +176,14 @@ These keymaps are configurable, see the `Configuration` section.
  | `o`    | Open the selected deck in the Anki GUI  |
  | `r`    | Refresh decks                           |
  | `p`    | Switch Anki profile                     |
+ | `t`    | Edit card templates for the model       |
+ | `T`    | Create a new model/note type            |
 
 ### Note Browser Keymaps
 
   | Keymap | Description                               |
   |--------|-------------------------------------------|
-  | `?`    | Show this help window                     |
+  | `g?`   | Show this help window                     |
   | `q`    | Close the Anki UI tab                     |
   | `<CR>` | Edit the selected note in the editor pane |
   | `d`    | Delete the selected note                  |
@@ -184,12 +196,22 @@ These keymaps are configurable, see the `Configuration` section.
 
   | Keymap       | Description                                       |
   |--------------|---------------------------------------------------|
-  | `?`          | Show this help window                             |
+  | `g?`         | Show this help window                             |
+  | `q`          | Close the note editor                             |
   | `<leader>w`  | \*W\*rite/Send the current note to Anki           |
   | `<leader>p`  | \*P\*ull the latest version of the note from Anki |
   | `<leader>r`  | \*R\*emove/Delete the note from Anki              |
-  | `<leader>k`  | \*K\*ill/Close the note editor buffers            |
   | `<leader>m`  | \*M\*edia/Attach media to the current field        |
+
+### Template Editor Keymaps
+
+  | Keymap       | Description                                       |
+  |--------------|---------------------------------------------------|
+  | `g?`         | Show this help window                             |
+  | `q`          | Close the template editor                        |
+  | `<leader>w`  | Save template changes to Anki                     |
+  | `<leader>p`  | Pull the latest template from Anki                |
+  | `<leader>s`  | Switch card (for multi-card models)                |
 
 ### Media Browser Keymaps
 
@@ -200,7 +222,7 @@ The media browser is a floating two-pane window (file list on the left, preview 
   | `<CR>`    | Insert the selected media reference      |
   | `q`       | Close the media browser                  |
   | `<Esc>`   | Close the media browser                  |
-  | `?`       | Show help window                        |
+  | `g?`      | Show help window                              |
   | `j`/`k`   | Navigate the file list (standard movement) |
 
 The media browser can be disabled (falling back to `vim.ui.select`) by setting `media_browser_preview = false` in the config. The window layout and appearance can be customized via the `media_browser` config table (see [Configuration](#configuration)).
