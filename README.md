@@ -32,22 +32,27 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 
 ## Quick Start (Nix)
 
-If you have [Nix](https://nixos.org) installed, you can try out the plugin without installing anything else:
+If you have [Nix](https://nixos.org) installed, you can try out the plugin without installing anything else.
+You will need two terminal sessions — one for Anki and one for Neovim:
 
 ```bash
-nix develop github:0fflineuser/anki.nvim
+# Terminal 1: Start Anki (with AnkiConnect pre-installed)
+nix develop github:0fflineuser/anki.nvim -c anki
 ```
 
-This drops you into a shell with:
+```bash
+# Terminal 2: Start Neovim with the plugin pre-configured
+nix develop github:0fflineuser/anki.nvim -c nvim
+```
+
+The dev shell provides:
 
 -   **Neovim** — with anki.nvim, plenary.nvim, and snacks.nvim pre-installed and configured
--   **Anki** — for running AnkiConnect locally
+-   **Anki** — with the AnkiConnect add-on pre-installed
 -   **stylua** — Lua formatter (for development)
 -   **vimcats** — documentation generator (for development)
 
-Just run `nvim` inside the shell, then `:Anki` or `\a` (default `<leader>a` mapping with Neovim's default leader key `\`) to open the UI.
-
-> Note: Anki must be running with the [AnkiConnect](https://git.sr.ht/~foosoft/anki-connect) add-on installed for the plugin to work.
+Inside Neovim, press `\a` (default `<leader>a` mapping with Neovim's default leader key `\`) or run `:Anki` to open the UI.
 
 ## Dependencies
 
