@@ -23,6 +23,9 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   Persistent 'Default' Deck: The 'Default' deck will always appear in the deck pane, even if deleted, because Anki automatically recreates it as needed.
 -   Deck Management: Create, rename, and delete Anki decks from within Neovim.
 -   Note Management: Create, edit, move and delete notes in any deck.
+-   Notes & Cards Views: Toggle between a notes view and a cards view of the current deck, like the Anki GUI's browser modes.
+-   Search: Run an arbitrary AnkiConnect search query from within the notes view.
+-   In-buffer Hints: Each browser pane shows a one-line key hint at the top, so you don't need to open help to remember the keys.
 -   Model Selection: Choose the note model when creating notes.
 -   Profile Switching: Switch between different Anki profiles without leaving Neovim.
 -   Open in Anki GUI: Jump directly to the selected deck or note in the Anki desktop application.
@@ -103,11 +106,24 @@ require("anki").setup({
   media_browser_preview = true,
   -- Function to format a note for display in the note list
   note_formatter = function(note)
+    local card_count = note.cards and #note.cards or 0
+    local card_word = card_count == 1 and "card" or "cards"
+    local prefix = string.format("(%d %s) ", card_count, card_word)
     local display = ""
     for key, field in pairs(note.fields) do
       display = display .. " [" .. key .. "]> " .. string.gsub(field.value, "[\r\n]", " ")
     end
-    return display
+    return prefix .. display
+  end,
+  -- Function to format a card for display in the card list (cards view mode)
+  card_formatter = function(card)
+    local front = ""
+    if card.fields and card.fields.Front then
+      front = string.gsub(card.fields.Front.value, "[\r\n]", " ")
+    end
+    local ease = card.factor and (card.factor / 1000) or "?"
+    return string.format("[%s] [%s] due:%s ivl:%s ease:%s  %s",
+      card.cardId, card.modelName, tostring(card.due), tostring(card.interval), tostring(ease), front)
   end,
   -- Floating media browser window configuration
   media_browser = {
@@ -154,6 +170,8 @@ require("anki").setup({
       show_all_notes = "a",
       refresh_notes = "r",
       move_note_to_deck = "m",
+      search = "f",
+      toggle_view_mode = "<Tab>",
     },
     editor = {
       close = "q",
@@ -183,6 +201,10 @@ This browser tab has a horizontal split layout:
 -   **Decks** (top): A list of your Anki decks.
 -   **Notes** (bottom): A list of notes in the selected deck.
 
+Each pane prepends a one-line key hint at the top, followed by a mode header and a blank line, so the available keys are always visible.
+
+The bottom pane has two view modes: **notes** (default) and **cards**. Press `<Tab>` (default) to toggle between them — notes mode shows one row per note with its field values and card count, cards mode shows one row per reviewable card with its due date, interval, and ease. Press `f` to run an arbitrary AnkiConnect search query (e.g. `deck:Foo tag:bar`).
+
 Editing notes and templates opens in their own separate tabs, and multiple notes or templates can be edited at the same time.
 
 Each context (deck browser, note browser, note editor, template editor) has its own set of keymaps.
@@ -208,16 +230,18 @@ These keymaps are configurable, see the `Configuration` section.
 
 ### Note Browser Keymaps
 
-  | Keymap | Description                               |
-  |--------|-------------------------------------------|
-  | `g?`   | Show this help window                     |
-  | `q`    | Close the Anki UI tab                     |
-  | `<CR>` | Edit the selected note in a new tab |
-  | `d`    | Delete the selected note                  |
-  | `o`    | Open the selected note in the Anki GUI    |
-  | `a`    | Show all notes across decks               |
-  | `r`    | Refresh notes                             |
-  | `m`    | Move the selected note to another deck    |
+  | Keymap   | Description                                    |
+  |----------|------------------------------------------------|
+  | `g?`     | Show this help window                          |
+  | `q`      | Close the Anki UI tab                          |
+  | `<CR>`   | Edit the selected note in a new tab            |
+  | `d`      | Delete the selected note                       |
+  | `o`      | Open the selected note in the Anki GUI         |
+  | `a`      | Show all notes across decks                    |
+  | `r`      | Refresh notes                                  |
+  | `m`      | Move the selected note's cards to another deck |
+  | `f`      | Search notes by AnkiConnect query              |
+  | `<Tab>`  | Toggle between notes and cards view            |
 
 ### Note Editor Keymaps
 
