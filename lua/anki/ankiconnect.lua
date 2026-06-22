@@ -132,6 +132,24 @@ M.notes_info = function(notes, on_result)
 	anki_connect_invoke_async({ action = "notesInfo", params = { notes = notes } }, on_result)
 end
 
+---
+--- Finds cards in Anki matching the given query string.
+---
+---@param query string The search query.
+---@param on_result function Callback: on_result(card_ids, error)
+M.find_cards = function(query, on_result)
+	anki_connect_invoke_async({ action = "findCards", params = { query = query } }, on_result)
+end
+
+---
+--- Gets detailed information for a list of card IDs.
+---
+---@param cards table List of card IDs.
+---@param on_result function Callback: on_result(cards_info, error)
+M.cards_info = function(cards, on_result)
+	anki_connect_invoke_async({ action = "cardsInfo", params = { cards = cards } }, on_result)
+end
+
 M.create_deck = function(deck, on_result)
 	anki_connect_invoke_async({ action = "createDeck", params = { deck = deck } }, on_result)
 end

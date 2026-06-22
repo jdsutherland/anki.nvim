@@ -23,7 +23,10 @@ local M = {
 		deck_buf_id = nil,
 		note_buf_id = nil,
 		notes = {},
+		cards = {},
+		decks = {},
 		current_filter = nil,
+		view_mode = "notes",
 	}),
 }
 

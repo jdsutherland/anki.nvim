@@ -28,7 +28,6 @@ It allows you to create, edit, and manage your Anki notes and decks directly fro
 -   Open in Anki GUI: Jump directly to the selected deck or note in the Anki desktop application.
 -   Media Attachments: Attach images, audio, and video to notes from local files, URLs, clipboard, or Anki's media collection.
 -   Media Browser: Browse Anki's media collection in a floating two-pane window with image preview support via [snacks.nvim](https://github.com/folke/snacks.nvim).
--   Automatic UI Refresh: Deck and notes list refresh automatically after changes.
 
 ## Quick Start (Nix)
 

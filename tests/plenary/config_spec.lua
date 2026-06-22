@@ -15,6 +15,7 @@ describe("anki.config", function()
 			assert.is_not_nil(config.defaults.create_user_commands)
 			assert.is_not_nil(config.defaults.mappings)
 			assert.is_not_nil(config.defaults.note_formatter)
+			assert.is_not_nil(config.defaults.card_formatter)
 			assert.is_not_nil(config.defaults.media_browser_preview)
 			assert.is_not_nil(config.defaults.media_browser)
 		end)
@@ -54,6 +55,27 @@ describe("anki.config", function()
 			assert.is_not_nil(note.show_all_notes)
 			assert.is_not_nil(note.refresh_notes)
 			assert.is_not_nil(note.move_note_to_deck)
+			assert.is_not_nil(note.search)
+			assert.is_not_nil(note.toggle_view_mode)
+		end)
+
+		it("has a card_formatter that formats card fields", function()
+			local card = {
+				cardId = 12345,
+				modelName = "Basic",
+				fields = {
+					Front = { value = "What is 2+2?" },
+					Back = { value = "4" },
+				},
+				due = 10,
+				interval = 1,
+				factor = 2500,
+			}
+			local result = config.defaults.card_formatter(card)
+			assert.is_true(result:find("12345") ~= nil)
+			assert.is_true(result:find("Basic") ~= nil)
+			assert.is_true(result:find("What is 2%+2%?") ~= nil)
+			assert.is_true(result:find("2%.5") ~= nil)
 		end)
 
 		it("has editor mapping keys", function()
@@ -79,9 +101,10 @@ describe("anki.config", function()
 				fields = {
 					Front = { value = "What is 2+2?" },
 				},
+				cards = {},
 			}
 			local result = config.defaults.note_formatter(note)
-			assert.are.equal(" [Front]> What is 2+2?", result)
+			assert.are.equal("(0 cards)  [Front]> What is 2+2?", result)
 		end)
 
 		it("has a note_formatter that collapses newlines in field values", function()
@@ -89,9 +112,10 @@ describe("anki.config", function()
 				fields = {
 					Text = { value = "line1\nline2\nline3" },
 				},
+				cards = { 1 },
 			}
 			local result = config.defaults.note_formatter(note)
-			assert.are.equal(" [Text]> line1 line2 line3", result)
+			assert.are.equal("(1 card)  [Text]> line1 line2 line3", result)
 		end)
 
 		it("has a note_formatter that collapses carriage returns in field values", function()
@@ -99,9 +123,21 @@ describe("anki.config", function()
 				fields = {
 					Text = { value = "line1\r\nline2" },
 				},
+				cards = { 1, 2 },
 			}
 			local result = config.defaults.note_formatter(note)
-			assert.are.equal(" [Text]> line1  line2", result)
+			assert.are.equal("(2 cards)  [Text]> line1  line2", result)
+		end)
+
+		it("uses singular 'card' for 1 and plural 'cards' otherwise", function()
+			local fields = { Front = { value = "q" } }
+			assert.are.equal("(0 cards)  [Front]> q", config.defaults.note_formatter({ fields = fields, cards = {} }))
+			assert.are.equal("(1 card)  [Front]> q", config.defaults.note_formatter({ fields = fields, cards = { 1 } }))
+			assert.are.equal(
+				"(2 cards)  [Front]> q",
+				config.defaults.note_formatter({ fields = fields, cards = { 1, 2 } })
+			)
+			assert.are.equal("(0 cards)  [Front]> q", config.defaults.note_formatter({ fields = fields }))
 		end)
 
 		it("has media_browser defaults with all keys", function()

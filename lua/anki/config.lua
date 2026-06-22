@@ -15,6 +15,7 @@
 ---@field create_user_commands boolean Whether to create the `:Anki` user command.
 ---@field mappings AnkiMappings Buffer-local keymappings for deck browser, note browser, editor, and template contexts.
 ---@field note_formatter fun(note: table): string Function to format a note for display in the note list.
+---@field card_formatter fun(card: table): string Function to format a card for display in the card list.
 ---@field media_browser_preview boolean Use floating media browser with image preview when browsing Anki media (default: `true`). Falls back to vim.ui.select if disabled or if snacks.nvim image is unavailable.
 ---@field media_browser AnkiMediaBrowserConfig Floating media browser window configuration.
 
@@ -57,7 +58,9 @@
 ---@field gui_note string Open in Anki GUI (default: `"o"`)
 ---@field show_all_notes string Show all notes (default: `"a"`)
 ---@field refresh_notes string Refresh notes (default: `"r"`)
----@field move_note_to_deck string Move note to another deck (default: `"m"`)
+---@field move_note_to_deck string Move note's cards to another deck (default: `"m"`)
+---@field search string Search notes by query (default: `"f"`)
+---@field toggle_view_mode string Toggle between notes and cards view (default: `"<Tab>"`)
 
 ---@class AnkiEditorMappings
 ---@field close string Close note editor (default: `"q"`)
@@ -85,11 +88,30 @@ M.defaults = {
 	gui_browse_enabled = true,
 	create_user_commands = true,
 	note_formatter = function(note)
+		local card_count = note.cards and #note.cards or 0
+		local card_word = card_count == 1 and "card" or "cards"
+		local prefix = string.format("(%d %s) ", card_count, card_word)
 		local display = ""
 		for key, field in pairs(note.fields) do
 			display = display .. " [" .. key .. "]> " .. string.gsub(field.value, "[\r\n]", " ")
 		end
-		return display
+		return prefix .. display
+	end,
+	card_formatter = function(card)
+		local front = ""
+		if card.fields and card.fields.Front then
+			front = string.gsub(card.fields.Front.value, "[\r\n]", " ")
+		end
+		local ease = card.factor and (card.factor / 1000) or "?"
+		return string.format(
+			"[%s] [%s] due:%s ivl:%s ease:%s  %s",
+			card.cardId,
+			card.modelName,
+			tostring(card.due),
+			tostring(card.interval),
+			tostring(ease),
+			front
+		)
 	end,
 	media_browser_preview = true,
 	media_browser = {
@@ -127,6 +149,8 @@ M.defaults = {
 			show_all_notes = "a",
 			refresh_notes = "r",
 			move_note_to_deck = "m",
+			search = "f",
+			toggle_view_mode = "<Tab>",
 		},
 		editor = {
 			close = "q",

@@ -85,6 +85,22 @@ describe("anki.ui.help", function()
 			assert.is_true(found[m.show_help .. " - Show this help window"] ~= nil)
 			assert.is_true(found[m.close .. " - Close the Anki UI tab"] ~= nil)
 			assert.is_true(found[m.edit_note .. " - Edit note"] ~= nil)
+			assert.is_true(found[m.search .. " - Search notes by query"] ~= nil)
+			assert.is_true(found[m.toggle_view_mode .. " - Toggle between notes and cards view"] ~= nil)
+			assert.is_true(found[m.move_note_to_deck .. " - Move note's cards to another deck"] ~= nil)
+		end)
+
+		it("mentions the distinction between notes and cards", function()
+			local lines, err = get_help_lines("notes")
+			assert.is_nil(err)
+			local has_blurb = false
+			for _, line in ipairs(lines) do
+				if line:find("A note is the content") then
+					has_blurb = true
+					break
+				end
+			end
+			assert.is_true(has_blurb)
 		end)
 	end)
 
@@ -180,6 +196,72 @@ describe("anki.ui.help", function()
 				end
 			end
 			assert.is_true(found)
+		end)
+	end)
+
+	describe("render_hint_line", function()
+		it("returns a non-empty string for decks", function()
+			local line = help.render_hint_line("decks")
+			assert.is_string(line)
+			assert.is_true(#line > 0)
+			assert.is_true(line:find("Decks:") ~= nil)
+		end)
+
+		it("returns a non-empty string for notes", function()
+			local line = help.render_hint_line("notes")
+			assert.is_string(line)
+			assert.is_true(#line > 0)
+			assert.is_true(line:find("Notes:") ~= nil)
+		end)
+
+		it("reflects custom mappings in the hint line", function()
+			config.setup({ mappings = { note = { search = "X" } } })
+			local line = help.render_hint_line("notes")
+			assert.is_true(line:find("X") ~= nil)
+		end)
+	end)
+
+	describe("render_hint_line alphabetical order", function()
+		-- Extracts the label words from a hint line, in order.
+		-- e.g. "Decks: a add | b close" -> { "add", "close" }
+		local function extract_labels(line)
+			local rest = line:gsub("^%w+: ", "")
+			local labels = {}
+			for segment in rest:gmatch("[^|]+") do
+				segment = segment:gsub("^%s+", ""):gsub("%s+$", "")
+				-- First token is the key, second is the label.
+				local label = segment:match("^%S+%s+(%S+)")
+				if label then
+					table.insert(labels, label)
+				end
+			end
+			return labels
+		end
+
+		it("lists deck actions in alphabetical order", function()
+			config.setup({})
+			local line = help.render_hint_line("decks")
+			local labels = extract_labels(line)
+			assert.is_true(#labels > 1)
+			for i = 1, #labels - 1 do
+				assert.is_true(
+					string.lower(labels[i]) <= string.lower(labels[i + 1]),
+					string.format("out of order: %q before %q", labels[i], labels[i + 1])
+				)
+			end
+		end)
+
+		it("lists note actions in alphabetical order", function()
+			config.setup({})
+			local line = help.render_hint_line("notes")
+			local labels = extract_labels(line)
+			assert.is_true(#labels > 1)
+			for i = 1, #labels - 1 do
+				assert.is_true(
+					string.lower(labels[i]) <= string.lower(labels[i + 1]),
+					string.format("out of order: %q before %q", labels[i], labels[i + 1])
+				)
+			end
 		end)
 	end)
 

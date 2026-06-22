@@ -4,7 +4,7 @@ anki.nvim                                                                 *anki*
  anki.nvim — Create, review, and manage Anki flashcards directly from Neovim.
 
  Features:
-   • Browse decks and notes in a 3-pane split layout
+   • Browse decks and notes in a two-pane browser tab, with note and template editing in separate tabs
    • Create, edit, send, and delete notes without leaving Neovim
    • Pull existing notes from Anki for editing
    • Attach media (images, audio, video) to notes from local files, URLs, clipboard, or Anki collection
@@ -52,8 +52,9 @@ AnkiConfig                                              *anki.config.AnkiConfig*
         {default_mappings}       (boolean)                 Whether to auto-set the prefix keymap.
         {gui_browse_enabled}     (boolean)                 Whether to open Anki GUI when sending/pulling notes.
         {create_user_commands}   (boolean)                 Whether to create the `:Anki` user command.
-        {mappings}               (AnkiMappings)            Buffer-local keymappings for deck, note, and editor panes.
+        {mappings}               (AnkiMappings)            Buffer-local keymappings for deck browser, note browser, editor, and template contexts.
         {note_formatter}         (fun(note:table):string)  Function to format a note for display in the note list.
+        {card_formatter}         (fun(card:table):string)  Function to format a card for display in the card list.
         {media_browser_preview}  (boolean)                 Use floating media browser with image preview when browsing Anki media (default: `true`). Falls back to vim.ui.select if disabled or if snacks.nvim image is unavailable.
         {media_browser}          (AnkiMediaBrowserConfig)  Floating media browser window configuration.
 
@@ -108,7 +109,9 @@ AnkiNoteMappings                                  *anki.config.AnkiNoteMappings*
         {gui_note}           (string)  Open in Anki GUI (default: `"o"`)
         {show_all_notes}     (string)  Show all notes (default: `"a"`)
         {refresh_notes}      (string)  Refresh notes (default: `"r"`)
-        {move_note_to_deck}  (string)  Move note to another deck (default: `"m"`)
+        {move_note_to_deck}  (string)  Move note's cards to another deck (default: `"m"`)
+        {search}             (string)  Search notes by query (default: `"f"`)
+        {toggle_view_mode}   (string)  Toggle between notes and cards view (default: `"<Tab>"`)
 
 
 AnkiEditorMappings                              *anki.config.AnkiEditorMappings*

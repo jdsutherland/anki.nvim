@@ -53,3 +53,13 @@ describe("anki.ankiconnect template methods", function()
 		end)
 	end)
 end)
+
+describe("anki.ankiconnect card wrappers", function()
+	it("exposes find_cards as a function", function()
+		assert.is_function(ankiconnect.find_cards)
+	end)
+
+	it("exposes cards_info as a function", function()
+		assert.is_function(ankiconnect.cards_info)
+	end)
+end)

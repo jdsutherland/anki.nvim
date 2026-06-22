@@ -2,6 +2,48 @@ local config = require("anki.config")
 
 local M = {}
 
+--- Renders a one-line hint string summarizing the keymaps for the given context.
+--- Used as the first line of the deck/notes buffers.
+---@param context string "decks", "notes", "editor", "templates", or "media_browser"
+---@return string hint line
+function M.render_hint_line(context)
+	local m
+	if context == "decks" then
+		m = config.options.mappings.deck
+		return string.format(
+			"Decks: %s add | %s close | %s create | %s delete | %s gui | %s help | %s model | %s profile | %s refresh | %s rename | %s select | %s templates",
+			m.add_note,
+			m.close,
+			m.create_deck,
+			m.delete_deck,
+			m.gui_deck,
+			m.show_help,
+			m.create_model,
+			m.switch_profile,
+			m.refresh_decks,
+			m.rename_deck,
+			m.select_deck,
+			m.edit_templates
+		)
+	elseif context == "notes" then
+		m = config.options.mappings.note
+		return string.format(
+			"Notes: %s all | %s cards/notes | %s close | %s delete | %s edit | %s gui | %s help | %s move | %s refresh | %s search",
+			m.show_all_notes,
+			m.toggle_view_mode,
+			m.close,
+			m.delete_note,
+			m.edit_note,
+			m.gui_note,
+			m.show_help,
+			m.move_note_to_deck,
+			m.refresh_notes,
+			m.search
+		)
+	end
+	return ""
+end
+
 --- Closes the help window if it is open.
 function M.close_help()
 	-- Iterate through all buffers to find the help buffer
@@ -58,6 +100,9 @@ function M.show_help(context)
 		help_lines = {
 			"Anki.nvim Help - Notes",
 			"",
+			"A note is the content you write; a card is a reviewable instance.",
+			"One note can produce multiple cards (e.g. Front/Back, reversed).",
+			"",
 			m.show_help .. " - Show this help window",
 			m.close .. " - Close the Anki UI tab",
 			m.edit_note .. " - Edit note",
@@ -65,6 +110,9 @@ function M.show_help(context)
 			m.delete_note .. " - Delete note",
 			m.gui_note .. " - Open in the Anki GUI",
 			m.refresh_notes .. " - Refresh Notes",
+			m.search .. " - Search notes by query",
+			m.toggle_view_mode .. " - Toggle between notes and cards view",
+			m.move_note_to_deck .. " - Move note's cards to another deck",
 		}
 	elseif context == "editor" then
 		local m = config.options.mappings.editor

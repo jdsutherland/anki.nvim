@@ -6,6 +6,39 @@ local anki_state = require("anki.state")
 
 local M = {}
 
+local HEADER_LINES = operations.HEADER_LINES
+
+--- Returns the deck name at the current cursor line in the deck buffer,
+--- accounting for the header offset. Returns nil if on the header.
+---@return string|nil
+local function deck_at_cursor()
+	local line_num = vim.api.nvim_win_get_cursor(0)[1]
+	local idx = line_num - HEADER_LINES
+	if idx < 1 then
+		return nil
+	end
+	return anki_state.ui.decks[idx]
+end
+
+--- Returns the list of decks selected across a visual range, accounting
+--- for the header offset.
+---@return string[] decks
+local function decks_in_range()
+	local start_line, end_line = utils.get_visual_line_range()
+	local start_idx = start_line - HEADER_LINES
+	local end_idx = end_line - HEADER_LINES
+	if start_idx > end_idx then
+		start_idx, end_idx = end_idx, start_idx
+	end
+	local decks = {}
+	for i = start_idx, end_idx do
+		if anki_state.ui.decks[i] then
+			table.insert(decks, anki_state.ui.decks[i])
+		end
+	end
+	return decks
+end
+
 --- Prompts the user to create a new deck and refreshes the UI.
 function M.create_deck()
 	vim.ui.input({ prompt = "Enter deck name:" }, function(deck_name)
@@ -24,15 +57,7 @@ end
 
 --- Deletes the currently selected deck after user confirmation.
 function M.delete_deck()
-	local start_line, end_line = utils.get_visual_line_range()
-
-	local decks = {}
-	for i = start_line, end_line do
-		local deck = anki_state.ui.decks[i]
-		if deck then
-			table.insert(decks, deck)
-		end
-	end
+	local decks = decks_in_range()
 
 	if #decks == 0 then
 		notification.warn("[anki.nvim][deck_ops] No decks selected.")
@@ -59,7 +84,7 @@ end
 
 --- Opens the GUI browser for the selected deck in Anki.
 function M.gui_deck()
-	local deck_name = vim.api.nvim_get_current_line()
+	local deck_name = deck_at_cursor()
 	if not deck_name then
 		return
 	end
@@ -69,7 +94,7 @@ end
 
 --- Renames the currently selected deck, moving all cards to the new deck name.
 function M.rename_deck()
-	local current_deck_name = vim.api.nvim_get_current_line()
+	local current_deck_name = deck_at_cursor()
 	if not current_deck_name or current_deck_name == "" then
 		notification.warn("[anki.nvim][deck_ops] No deck selected")
 		return
