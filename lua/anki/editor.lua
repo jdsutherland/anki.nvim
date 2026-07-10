@@ -101,7 +101,11 @@ function M.create_note(deck_name, model_name, field_names, id)
 				editor_context = EditorContext:new({
 					winid = 0,
 					tabid = 0,
-					bufnr = vim.api.nvim_create_buf(true, true),
+					-- unlisted: matches every other internal buffer in this plugin
+					-- (help.lua, windows.lua, media_browser.lua, template_editor.lua all
+					-- use unlisted too) so buffer-management plugins like hbac.nvim don't
+					-- race-close these before display_note() gets to show/name them
+					bufnr = vim.api.nvim_create_buf(false, true),
 				}),
 				name = name,
 			})
@@ -113,7 +117,8 @@ function M.create_note(deck_name, model_name, field_names, id)
 		tags = EditorContext:new({
 			winid = 0,
 			tabid = 0,
-			bufnr = vim.api.nvim_create_buf(true, true),
+			-- unlisted, same reasoning as the field buffers above
+			bufnr = vim.api.nvim_create_buf(false, true),
 		}),
 		deck_name = deck_name,
 		model_name = model_name,
